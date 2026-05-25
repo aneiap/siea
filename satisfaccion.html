@@ -67,7 +67,7 @@
       padding: 0;
       font-family: Arial, sans-serif;
       color: rgb(0, 0, 0);
-  
+      
       /* Establece la imagen de fondo */
       background-image: url('https://i.ibb.co/gzwRXW2/FOTO-FONDO-SIEA-SNC2023-1.jpg');
       /* Fija la imagen de fondo para que no se desplace con el contenido */
@@ -569,6 +569,7 @@
 </head>
 <body class="dark-mode">
 
+  
   <!-- Proceso para insertar el logo de la herramienta de SIEA y adicionalmente detalles iniciales y generales de la página -->
     <!-- Botón de modo de visualización-->
     <!--<button id="modo-switch" class="light-mode">
@@ -579,19 +580,18 @@
     <!-- El contenido principal de tu página va aquí -->
   </div>
 
-  
   <!-- DETALLES DEL ACORDEÓN 4 PARA EVALUACIÓN DE SATISFACCIÓN DEL ESPACIO -->
   <div class="acordeon4">EVALÚA UN ESPACIO / EVENTO 🌟</div>
   <div id="acordeon4-content" style="display: block">
     <div class="acordeon4-content-inner">
       <!-- Contenido para evaluar espacio -->
       <div>
-      <button class="button-evaluar" onclick="window.location.href = 'https://aneiap.github.io/siea/general.html'">⬅️ VOLVER AL INICIO</button>
+      <button class="button-evaluar" onclick="window.location.href = 'https://alessvilla.github.io/SIEA/public/index.html'">⬅️ VOLVER AL INICIO</button>
       </div>
-      <button class="alternarConsulta" onclick="alternarEvaluacion()">Click aquí para evaluar satisfacción de un evento</button>
+      <button class="alternarConsulta" onclick="window.location.href = 'https://alessvilla.github.io/SIEA/public/index_evaluar_evento.html'">Click aquí para evaluar satisfacción de un evento</button>
       <button class="alternarConsulta" onclick="limpiarEvaluacion()">Borrar todo</button>
 
-      <div class="evaluar-group" id="evaluar-espacio" style="display: none;">
+      <div class="evaluar-group" id="evaluar-espacio">
       <!-- Botón para alternar entre evaluar espacio y evaluar evento -->
         <h2 style="font-size: 22px; text-transform: uppercase;"><p style="text-align: center;">DATOS GENERALES DEL ESPACIO 🏢</p></h2>
         <div class="row">
@@ -704,7 +704,7 @@
       </div>
 
       <!-- Contenido para evaluar evento (inicialmente oculto) -->
-      <div class="evaluar-group" id="evaluar-evento" style="display: block;">
+      <div class="evaluar-group" id="evaluar-evento" style="display: none;">
 
         <h2 style="font-size: 22px; text-transform: uppercase;"><p style="text-align: center;">DATOS GENERALES DEL EVENTO CAPITULAR/NACIONAL 🏢</p></h2>
           <div class="row">
@@ -996,7 +996,6 @@
         <label for="crm-comentarios"><b></b> Comentarios, sugerencias, recomendaciones sobre el evento.</label>
         <input type="text" id="crm-comentarios" placeholder="Escriba acá todos tus comentarios sobre el evento al que asististe.">
         <button class="button-evaluar" onclick="evaluarEvento()">Enviar evaluación de evento</button>
-        (Un solo click)
       </div>
 
     </div>
@@ -1004,10 +1003,6 @@
 
   <script>
 
-    document.addEventListener("DOMContentLoaded", function() {
-      consultarEventosCRM();
-    });
-    
     // Variables para la evaluación del espacio dentro del Acordeón 4 y actualización de info del espacio en Acordeón 5:
     var fechaHoy = new Date().toISOString().slice(0, 10);
     var capituloEspacioSelect = document.getElementById("capitulo-espacio");
@@ -1015,55 +1010,91 @@
     // Función para que los nombres de los espacios que están disponibles para evaluar se actualicen a
     // Todos aquellos que tengan una fecha de evento entre HOY y hace 3 SEMANAS, luego de 3 semanas no se podrá evaluar
     capituloEspacioSelect.addEventListener("change", function() {
+
         var capituloSeleccionado = document.getElementById("capitulo-espacio").value;
-        // Calcular la fecha de hace tres semanas
+
+        // Calcular la fecha de hace 3 semanas
         var tresSemanasAtras = new Date();
-        tresSemanasAtras.setDate(tresSemanasAtras.getDate() - 21); // Restar 21 días para tres semanas
-        
-        // Formatear la fecha de tres semanas atrás en el formato YYYY-MM-DD
+        tresSemanasAtras.setDate(tresSemanasAtras.getDate() - 21);
+
+        // Formatear fecha YYYY-MM-DD
         var dia = String(tresSemanasAtras.getDate()).padStart(2, '0');
         var mes = String(tresSemanasAtras.getMonth() + 1).padStart(2, '0');
         var año = tresSemanasAtras.getFullYear();
-        var fechaTresSemanasAtras = año + '-' + mes + '-' + dia;
-        console.log("la fecha de hace 3 semanas es con función " + fechaTresSemanasAtras);
-        // Obtener las reservas para el capítulo y dentro del rango de fechas
+        var fechaTresSemanasAtras = `${año}-${mes}-${dia}`;
+
+        console.log("La fecha de hace 3 semanas es: " + fechaTresSemanasAtras);
+
+        // Consulta a Firestore
         var reservasRef = firebase.firestore().collection("reservas");
-        var consulta = reservasRef.where("capitulosOrganizadores", "array-contains", capituloSeleccionado)
-                                  .where("fechaEvento", ">=", fechaTresSemanasAtras)
-                                  .where("fechaEvento", "<=", fechaHoy)
-                                  .where("crm", "==", "no")
+        var consulta = reservasRef
+            .where("capitulosOrganizadores", "array-contains", capituloSeleccionado)
+            .where("fechaEvento", ">=", fechaTresSemanasAtras)
+            .where("fechaEvento", "<=", fechaHoy)
+            .where("crm", "==", "no");
 
         consulta.get().then(function(querySnapshot) {
-          var nombresEventos = [];
-          querySnapshot.forEach(function(doc) {
-              nombresEventos.push(doc.data().nombreEvento);
-          });
-          nombresEventos.sort(); // Orden alfabético
-          // Agregar opciones al select
-          var nombreEspacioSelect = document.getElementById("nombre-espacio");
-          nombreEspacioSelect.innerHTML = ""; // Limpiar opciones anteriores
-          if (nombresEventos.length === 0) {
-              // Si no hay eventos disponibles, mostrar un mensaje indicando que no hay eventos en el rango de fechas
-              var option = document.createElement("option");
-              option.text = "No hay ningún evento cuya fecha sea entre HOY y hace 3 SEMANAS para este capítulo o ya pasó el plazo máximo del evento que buscas evaluar.";
-              option.value = "";
-              option.disabled = true;
-              option.selected = true;
-              nombreEspacioSelect.add(option);
-          } else {
-              // Si hay eventos disponibles, agregar cada nombre como una opción
-              nombresEventos.forEach(function(nombre) {
-                  var option = document.createElement("option");
-                  option.text = nombre;
-                  option.value = nombre;
-                  nombreEspacioSelect.add(option);
-              });
-          }
+            
+            var eventos = [];
+
+            querySnapshot.forEach(function(doc) {
+                eventos.push({
+                    nombre: doc.data().nombreEvento,
+                    fecha: doc.data().fechaEvento      // <-- IMPORTANTE
+                });
+            });
+
+            // Ordenar: primero por fecha más reciente, luego por nombre
+            eventos.sort((a, b) => {
+                if (a.fecha > b.fecha) return -1;
+                if (a.fecha < b.fecha) return 1;
+                return a.nombre.localeCompare(b.nombre);
+            });
+
+            // Limpiar select
+            var nombreEspacioSelect = document.getElementById("nombre-espacio");
+            nombreEspacioSelect.innerHTML = "";
+
+            if (eventos.length === 0) {
+
+                var option = document.createElement("option");
+                option.text =
+                    "No hay eventos entre HOY y hace 3 semanas para este capítulo.";
+                option.value = "";
+                option.disabled = true;
+                option.selected = true;
+                nombreEspacioSelect.add(option);
+
+            } else {
+
+                // Arrays para formatear la fecha
+                const diasSemana = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+                const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+                eventos.forEach(function(e) {
+
+                    // Convertir "YYYY-MM-DD" → Date
+                    const partes = e.fecha.split("-");
+                    const fechaObj = new Date(partes[0], partes[1] - 1, partes[2]);
+
+                    // Formatear
+                    const diaNombre = diasSemana[fechaObj.getDay()];
+                    const diaNumero = fechaObj.getDate();
+                    const mesNombre = meses[fechaObj.getMonth()];
+                    const fechaFormateada = `${diaNombre}, ${diaNumero} de ${mesNombre}`;
+
+                    var option = document.createElement("option");
+                    option.text = `${e.nombre} | ${fechaFormateada}`;
+                    option.value = e.nombre; // si quieres usar el ID, me dices
+                    nombreEspacioSelect.add(option);
+                });
+            }
+
         }).catch(function(error) {
             console.log("Error obteniendo reservas:", error);
-            // Manejar el error aquí
         });
     });
+
 
     // Variable global del correo del usuario para mirar si inició sesión un DCA o DNA.
     var correoUsuario = ""; //deben estar vacías, solo que tengo flojera de iniciar sesión.
@@ -1244,6 +1275,19 @@
     }
 
     function evaluarEspacio() {
+
+      // Mostrar alerta de carga para evitar doble clic
+      Swal.fire({
+        title: 'Enviando evaluación...',
+        text: 'No cierres la ventana ni vuelvas a dar clic. Estamos procesando tu evaluación.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      
       var nombreEspacio = document.getElementById("nombre-espacio").value;
       var capituloEspacio = document.getElementById("capitulo-espacio").value;
 
@@ -1269,6 +1313,7 @@
       // Verificar si hay campos faltantes
       if (nombreEspacio === "" || capituloEspacio === "") {
           // Decirle al usuario que no ha seleccionado un espacio a evaluar.
+          Swal.close(); // Cierra el modal de carga
           Swal.fire({
               icon: 'error',
               title: '¡NO HAS SELECCIONADO EL ESPACIO QUE QUIERES EVALUAR!',
@@ -1297,6 +1342,7 @@
       // Validar la longitud de comentarios
       if (comentarios.length > 100) {
           // Mostrar el mensaje de error utilizando Swal.fire
+          Swal.close(); // Cierra el modal de carga
           Swal.fire({
               title: '¡Comentario demasiado largo!',
               text: 'El comentario no puede tener más de 100 caracteres.',
@@ -1309,6 +1355,7 @@
       var telefonoAsistenteRegex = /^3\d{9}$/; // Esta expresión regular verifica que solo haya 10 dígitos y nada más.
       // Aquí ajustamos la condición para que verifique correctamente si el teléfono no coincide con el patrón en caso de haberlo diligenciado pues es opcional
       if (telefonoAsistente !== "" && !telefonoAsistenteRegex.test(telefonoAsistente)) {
+        Swal.close(); // Cierra el modal de carga
         Swal.fire({
           title: '¡TELÉFONO INCORRECTO!',
           text: 'Por favor, introduce un número de teléfono válido. Debe ser exactamente 10 dígitos sin espacios, símbolos o letras.',
@@ -1330,9 +1377,12 @@
         if (!querySnapshot.empty) {
           querySnapshot.forEach(function(doc) {
               var data = doc.data();
-              var correosAsistentes = (data.correosAsistentes || "").toLowerCase(); // Obtener la cadena de correos o usar una cadena vacía si es null o undefined
-              if (correoAsistente !== "" && correosAsistentes.includes(correoAsistente)) {
+              var correosAsistentesStr = (data.correosAsistentes || "").toLowerCase();
+              var correosArray = correosAsistentesStr.split("|").map(function(s){ return s.trim(); }).filter(Boolean);
+
+              if (correoAsistente !== "" && correosArray.includes(correoAsistente.toLowerCase())) {
                   // El usuario ya evaluó este espacio
+                  Swal.close(); // Cierra el modal de carga
                   Swal.fire({
                       icon: 'warning',
                       title: '¡YA EVALUASTE ESTE ESPACIO!',
@@ -1366,6 +1416,7 @@
             // Verificar si hay campos faltantes
             if (camposFaltantes.length > 0) {
                 // Mostrar una alerta con los campos faltantes
+                Swal.close(); // Cierra el modal de carga
                 Swal.fire({
                     icon: 'error',
                     title: '¡NO HAS DILIGENCIADO TODOS LOS CAMPOS!',
@@ -1442,6 +1493,7 @@
                   // Actualizar el evento en la base de datos
                   reservasRef.doc(doc.id).set(data, { merge: true }).then(function() {
                       // Mostrar mensaje de éxito
+                      Swal.close(); // Cierra el modal de carga
                       mostrarMensajeEvaluar();
 
                       // Reiniciar los campos del formulario en caso de que quiera volver a llenar para otro espacio diferente.
@@ -1452,6 +1504,7 @@
                       }).catch(function(error) {
                           console.error("Error actualizando el evento:", error);
                           // Mostrar mensaje de error
+                          Swal.close(); // Cierra el modal de carga
                           Swal.fire({
                               icon: 'error',
                               title: '¡ERROR AL ENVIAR LA EVALUACIÓN!',
@@ -1463,6 +1516,7 @@
               }).catch(function(error) {
                   console.error("Error obteniendo el evento:", error);
                   // Mostrar mensaje de error
+                  Swal.close(); // Cierra el modal de carga
                   Swal.fire({
                       icon: 'error',
                       title: '¡ERROR AL OBTENER EL EVENTO!',
@@ -1477,6 +1531,7 @@
       }).catch(function(error) {
         console.error("Error al verificar la evaluación del espacio:", error);
         // Mostrar mensaje de error
+        Swal.close(); // Cierra el modal de carga
         Swal.fire({
             icon: 'error',
             title: '¡ERROR AL VERIFICAR LA EVALUACIÓN!',
@@ -1657,20 +1712,7 @@
             "usc": "USC",
             "nacional": "ANEIAP NACIONAL"
         };
-    
-        // 🧊 Función para formatear la fecha del evento
-        const formatearFechaBonita = (fechaStr) => {
-            const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-            const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-    
-            const fecha = new Date(fechaStr + "T00:00:00"); 
-            const diaSemana = dias[fecha.getDay()];
-            const dia = fecha.getDate();
-            const mes = meses[fecha.getMonth()];
-    
-            return `${diaSemana}, ${dia} de ${mes}`;
-        };
-    
+
         Swal.fire({
             title: 'Selecciona el capítulo que organizó el evento',
             html: '<p style="font-size: 14px; color: gray;">Si el evento que calificarás es un evento nacional, selecciona <b>"ANEIAP Nacional"</b></p>',
@@ -1687,97 +1729,45 @@
                 }
             }
         }).then((result) => {
-    
             if (result.isConfirmed && result.value) {
-    
-                const capituloSeleccionado = result.value;
-                console.log("Capítulo seleccionado:", capituloSeleccionado);
-    
+                const capituloSeleccionadoSwalfire = result.value;
+                console.log("Capítulo seleccionado: " + capituloSeleccionadoSwalfire);
+
                 var reservasRef = firebase.firestore().collection("crmeventos");
-    
                 var consultaEventos = reservasRef
                     .where("crm", "==", "si")
-                    .where("capitulosOrganizadores", "array-contains", capituloSeleccionado);
-    
+                    .where("capitulosOrganizadores", "array-contains", capituloSeleccionadoSwalfire);
+
                 var selectEvento = document.getElementById("evento-crm");
                 selectEvento.innerHTML = '<option value="" disabled selected hidden>Selecciona un evento capitular/nacional</option>';
-    
+
                 consultaEventos.get().then((querySnapshot) => {
-    
-                    let eventos = [];
-    
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        eventos.push({
-                            id: doc.id,
-                            nombre: data.nombrecrmEvento,
-                            fecha: data.fechaEvento
-                        });
-                    });
-    
-                    // ==============================
-                    // 🔥 Filtro: últimos 30 días
-                    // ==============================
-                    let hoy = new Date();
-                    let hace30 = new Date();
-                    hace30.setDate(hoy.getDate() - 30);
-    
-                    let yyyy = hace30.getFullYear();
-                    let mm = String(hace30.getMonth() + 1).padStart(2, "0");
-                    let dd = String(hace30.getDate()).padStart(2, "0");
-                    let fechaLimite = `${yyyy}-${mm}-${dd}`;
-    
-                    eventos = eventos.filter(e => e.fecha >= fechaLimite);
-    
-                    // ==============================
-                    // 🔥 Ordenar de reciente → antiguo
-                    // ==============================
-                    eventos.sort((a, b) => {
-                        if (a.fecha > b.fecha) return -1;
-                        if (a.fecha < b.fecha) return 1;
-                        return a.nombre.localeCompare(b.nombre);
-                    });
-    
-                    // ==============================
-                    // 🔥 Llenar el <select>
-                    // ==============================
-                    if (eventos.length === 0) {
-                        selectEvento.innerHTML = '<option value="">No hay eventos recientes (últimos 30 días).</option>';
+                    if (querySnapshot.empty) {
+                        selectEvento.innerHTML = '<option value="">No hay ningún evento con CRM pendiente.</option>';
                     } else {
-                        eventos.forEach(ev => {
+                        querySnapshot.forEach((doc) => {
+                            console.log("Documento encontrado:", doc.id);
+                            console.log("Datos del documento:", doc.data());
+                            
+                            var nombrecrmEvento = doc.data().nombrecrmEvento;
                             var option = document.createElement("option");
-                            option.text = `${ev.nombre} (${formatearFechaBonita(ev.fecha)})`;
-                            option.value = ev.nombre;
+                            option.text = nombrecrmEvento;
+                            option.value = nombrecrmEvento;
                             selectEvento.add(option);
                         });
                     }
-    
                 }).catch((error) => {
                     console.log("Error obteniendo eventos:", error);
                 });
-    
             }
         });
     }
 
     function evaluarEvento() {
 
-      // Mostrar alerta de carga para evitar doble clic
-      Swal.fire({
-        title: 'Enviando evaluación...',
-        text: 'No cierres la ventana ni vuelvas a dar clic. Estamos procesando tu evaluación.',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        allowEnterKey: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
-      });
-      
       var eventoSeleccionado = document.getElementById("evento-crm").value;
       console.log(eventoSeleccionado)
       if (eventoSeleccionado === "") {
-        Swal.close(); // Cierra el modal de carga
         Swal.fire({
             title: '¡NO HAS SELECCIONADO UN EVENTO AÚN!',
             text: 'Debes seleccionar un evento (magno, scc, capitular, regional, nacional, etc.) primero para poder evlauarlo.',
@@ -1798,7 +1788,6 @@
       var crmTelefonoAsistente = document.getElementById("crm-telefono-asistente").value;
       var crmTelefonoAsistenteRegex = /^3\d{9}$/;
       if (crmTelefonoAsistente !== "" && (!crmTelefonoAsistenteRegex.test(crmTelefonoAsistente)  || crmTelefonoAsistente.length !== 10)) {
-        Swal.close(); // Cierra el modal de carga
         Swal.fire({
           title: '¡TELÉFONO INCORRECTO!',
           text: 'Digita un número de teléfono válido, debe ser de 10 dígitos y sin espacios, símbolos o letras.',
@@ -1859,7 +1848,6 @@
               camposFaltantes.forEach(function (campo) {
                   mensaje += "- " + campo + "\n";
               });
-              Swal.close(); // Cierra el modal de carga
               Swal.fire({
                   title: '¡FALTAN CAMPOS POR DILIGENCIAR!',
                   text: mensaje,
@@ -1956,7 +1944,6 @@
                 // Éxito: el evento se ha actualizado correctamente en el documento existente
                 // Aquí puedes agregar cualquier otra lógica que desees después de actualizar el evento
                 // Muestra el mensaje de actualización completada
-                Swal.close(); // Cierra el modal de carga
                 mostrarMensajeEvaluar();
 
                 // Oculta el contenido del acordeón
@@ -1967,7 +1954,6 @@
                 // Error: hubo un problema al actualizar el evento
                 console.error("ERROR AL EVALUAR EL EVENTO: ", error);
                 if (error !== "Evento no encontrado") {
-                  Swal.close(); // Cierra el modal de carga
                   Swal.fire({
                     title: '¡ERROR!',
                     text: 'Ha ocurrido un error al evaluar el evento. Inténtalo nuevamente más tarde o consulta en el link de dudas, reclamos e inquietudes arriba.',
@@ -1993,6 +1979,7 @@
 
 </body>
 </html>
+
 
 
 
