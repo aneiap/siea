@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="refresh" content="0;url=public/index.html">
+  <meta http-equiv="refresh" content="0;url=general.html">
 </head>
 <body>
   <p>Redirigiendo a la página principal...</p>
