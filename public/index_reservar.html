@@ -64,6 +64,11 @@
   <title>SIEA (Sistema Integral de Espacios ANEIAP)</title>
   <style>
     body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      color: rgb(0, 0, 0);
+      
       /* Establece la imagen de fondo */
       background-image: url('https://i.ibb.co/gzwRXW2/FOTO-FONDO-SIEA-SNC2023-1.jpg');
       /* Fija la imagen de fondo para que no se desplace con el contenido */
@@ -73,7 +78,7 @@
       /* Centra la imagen */
       background-position: center;
       /* Establece un color de fondo de respaldo */
-      background-color: #f8f8f8; /* Este color será visible si la imagen no se carga */
+      background-color: #000000; /* Este color será visible si la imagen no se carga */
     }
     @font-face {
       font-family: 'Century Gothic';
@@ -82,6 +87,11 @@
       /* Agrega más formatos de fuentes si es necesario */
       font-weight: normal;
       font-style: normal;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(360deg); }
     }
     /* Estilos para el contenedor de la imagen */
     .centered-text {
@@ -566,7 +576,9 @@
   <div class="main-content">
     <!-- El contenido principal de tu página va aquí -->
   </div>
+  
 
+  
   <!-- DETALLES DEL ACORDEÓN 1 QUE CORRESPONDE A REGISTRAR LA RESERVA DEL EVENTO-->
   <div class="acordeon1">REGISTRA TU ESPACIO ✏️</div>
   <div id="acordeon1-content" style="display: block;">
@@ -679,6 +691,8 @@
                   <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
                   <option value="uniguajira">UNIGUAJIRA</option>
                   <option value="unimagdalena">UNIMAGDALENA</option>
+                  <option value="usasm">USASM</option>
+                  <option value="unicaribe">UNICARIBE</option>
                   <option value="uniatlantico">UNIATLÁNTICO</option>
                   <option value="uninorte">UNINORTE</option>
                   <option value="unisimon">UNISIMÓN</option>
@@ -687,7 +701,6 @@
                   <option value="utb">UTB</option>
                   <option value="upbmonteria">UPBMONTERÍA</option>
                   <option value="unicordoba">UNICÓRDOBA</option>
-                  <option value="areandina">AREANDINA</option>
                   <option value="ufps">UFPS</option>
                   <option value="unalmed">UNALMED</option>
                   <option value="udea">UDEA</option>
@@ -698,8 +711,8 @@
                   <option value="unalbog">UNALBOG</option>
                   <option value="univalle">UNIVALLE</option>
                   <option value="icesi">ICESI</option>
+                  <option value="uao">UAO</option>
                   <option value="usc">USC</option>
-                  <option value="librecali">LIBRECALI</option>
                   <option value="nacional">ANEIAP NACIONAL</option>
                 </select>
             </div>
@@ -809,6 +822,13 @@
         promotores: 0,
         satisfaccion: 0,
         crm: "no",
+        tipoEvento:"",
+        areaTrabajo:"",
+        respuestas1:"",
+        respuestas2:"",
+        respuestas3:"",
+        satisfaccion:0,
+        totalAsistentes:0,
       })
       .then((docRef) => {
         // Éxito: el evento se ha registrado correctamente en el documento existente
@@ -959,7 +979,7 @@
 
         // Verificar el formato del teléfono del organizador (debe empezar por 3 y tener 10 dígitos)
         var telefonoOrganizador = document.getElementById("telefono-organizador").value;
-        var telefonoOrganizadorRegex = /^3\d{9}$/;
+        var telefonoOrganizadorRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
         // Validación de datos para que el teléfono del organizador efectivamente sea un celular válido.
         if (!telefonoOrganizadorRegex.test(telefonoOrganizador)) {
@@ -980,7 +1000,7 @@
         var telefonoPonente = document.getElementById("telefono-ponente").value;
         // En caso de haber diligenciado el teléfono del ponente, valida que sea una celular válido.
         if (telefonoPonente !== "") {
-          var telefonoPonenteRegex = /^3\d{9}$/;
+          var telefonoPonenteRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
           if (!telefonoPonenteRegex.test(telefonoPonente)) {
             Swal.fire({
@@ -1214,6 +1234,8 @@
         const bancoCorreos = {
             uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
             unimagdalena: "academico_unimagdalena@aneiap.co",
+            usasm: "academico_usasm@aneiap.co, interventoria_usasm@aneiap.co",
+            unicaribe: "academico_unicaribe@aneiap.co, interventoria_unicaribe@aneiap.co",
             uniatlantico: "academico_uniatlantico@aneiap.co",
             uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
             unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
@@ -1222,7 +1244,6 @@
             utb: "academico_utb@aneiap.co",
             upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
             unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
-            areandina: "academico_areandina@aneiap.co, interventoria_areandina@aneiap.co",
             ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
             unalmed: "academico_unalmed@aneiap.co",
             udea: "academico_udea@aneiap.co",
@@ -1233,8 +1254,8 @@
             unalbog: "academico_unalbog@aneiap.co",
             univalle: "academico_univalle@aneiap.co",
             icesi: "academico_icesi@aneiap.co",
+            uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
             usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-            librecali: "academico_librecali@aneiap.co, interventoria_librecali@aneiap.co",
             nacional: "academico@aneiap.co, interventoria@aneiap.co"
         };
 
@@ -1442,15 +1463,16 @@
       const bancoCorreos = {
         uniguajira: "comunicaciones_uniguajira@aneiap.co",
         unimagdalena: "comunicaciones_unimagdalena@aneiap.co",
+        usasm: "comunicaciones_usasm@aneiap.co",
+        unicaribe: "comunicaciones_unicaribe@aneiap.co",
         uniatlantico: "comunicaciones_uniatlantico@aneiap.co",
-        uninorte: "comunicaciones_uninorte@aneiap.co, geraldine.mendoza@aneiap.co",
+        uninorte: "comunicaciones_uninorte@aneiap.co, mariana.murcia@aneiap.co",
         unisimon: "comunicaciones_unisimon@aneiap.co",
         cuc: "comunicaciones_cuc@aneiap.co",
         librequilla: "comunicaciones_librequilla@aneiap.co",
         utb: "comunicaciones_utb@aneiap.co",
         upbmonteria: "comunicaciones_upbmonteria@aneiap.co",
         unicordoba: "comunicaciones_unicordoba@aneiap.co",
-        areandina: "comunicaciones_areandina@aneiap.co",
         ufps: "comunicaciones_ufps@aneiap.co",
         unalmed: "comunicaciones_unalmed@aneiap.co",
         udea: "comunicaciones_udea@aneiap.co",
@@ -1461,8 +1483,8 @@
         unalbog: "comunicaciones_unalbog@aneiap.co",
         univalle: "comunicaciones_univalle@aneiap.co",
         icesi: "comunicaciones_icesi@aneiap.co",
+        uao: "comunicaciones_uao@aneiap.co",
         usc: "comunicaciones_usc@aneiap.co",
-        librecali: "comunicaciones_librecali@aneiap.co",
         nacional: "proy_diseno_nacional@aneiap.co"
       };
 
@@ -1575,15 +1597,16 @@
         const bancoCorreos = {
             uniguajira: "comunicaciones_uniguajira@aneiap.co",
             unimagdalena: "comunicaciones_unimagdalena@aneiap.co",
+            usasm: "comunicaciones_usasm@aneiap.co",
+            unicaribe: "comunicaciones_unicaribe@aneiap.co",
             uniatlantico: "comunicaciones_uniatlantico@aneiap.co",
-            uninorte: "comunicaciones_uninorte@aneiap.co, geraldine.mendoza@aneiap.co",
+            uninorte: "comunicaciones_uninorte@aneiap.co, mariana.murcia@aneiap.co",
             unisimon: "comunicaciones_unisimon@aneiap.co",
             cuc: "comunicaciones_cuc@aneiap.co",
             librequilla: "comunicaciones_librequilla@aneiap.co",
             utb: "comunicaciones_utb@aneiap.co",
             upbmonteria: "comunicaciones_upbmonteria@aneiap.co",
             unicordoba: "comunicaciones_unicordoba@aneiap.co",
-            areandina: "comunicaciones_areandina@aneiap.co",
             ufps: "comunicaciones_ufps@aneiap.co",
             unalmed: "comunicaciones_unalmed@aneiap.co",
             udea: "comunicaciones_udea@aneiap.co",
@@ -1594,8 +1617,8 @@
             unalbog: "comunicaciones_unalbog@aneiap.co",
             univalle: "comunicaciones_univalle@aneiap.co",
             icesi: "comunicaciones_icesi@aneiap.co",
+            uao: "comunicaciones_uao@aneiap.co",
             usc: "comunicaciones_usc@aneiap.co",
-            librecali: "comunicaciones_librecali@aneiap.co",
             nacional: "proy_diseno_nacional@aneiap.co"
         };
 
@@ -1682,33 +1705,35 @@
     }
 
     function verificarDisponibilidadRegistro() {
-        return new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         var disponibilidadHorarios = Array(28).fill(true); // Inicialmente, todos los intervalos están disponibles
-
+    
         // var claveEvento = document.getElementById("clave-evento").value; // ya no es necesario esto
         var nuevaFecha = document.getElementById("fecha-evento").value;
-        var nuevaHora = document.getElementById("hora-evento").value;
-        var nuevaDuracion = document.getElementById("duracion-evento").value;
+        var nuevaHora = Number(document.getElementById("hora-evento").value);
+        var nuevaDuracion = Number(document.getElementById("duracion-evento").value);
         var nuevoCapitulo = document.getElementById("capitulo-organizador").value;
-
+    
         // Validación de datos para que la fecha con la que se registrará el evento sea mayor a la de hoy.
-        if (parseInt(nuevaDuracion) + parseInt(nuevaHora) > 1321) {
+        if (nuevaDuracion + nuevaHora > 1321) {
           Swal.fire({
             title: '¡ESTÁS INTENTANDO RESERVAR DESPUÉS DE LAS 22:00 (10PM)!',
             text: 'El evento debe estar programado para finalizar a más tardar hasta las 22:00, ve a la duración del mismo y edítala de tal forma que no se excedan las 22:00 (10pm)',
             icon: 'warning',
             confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
           });
+          resolve(false);
           return; // Detener el registro del evento
         }
-
+    
         // Realiza una consulta a la base de datos para obtener las reservas en la nueva fecha
         var reservasRef = firebase.firestore().collection("reservas");
-
+        var consulta;
+    
         // Primera consulta: Filtrar por "fechaEvento" igual a "nuevaFecha"
         if (nuevoCapitulo === "nacional") {
           // Si se seleccionó "ANEIAP NACIONAL", consultar solo las reservas para toda la Asociación
@@ -1717,23 +1742,39 @@
           // Consultar las reservas para el capítulo seleccionado y para toda la Asociación (ANEIAP NACIONAL)
           consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "in", [nuevoCapitulo, "nacional"]);
         }
-
+    
         // Realizar el filtrado para obtener intervalos disponibles y no disponibles
         consulta.get().then(function(querySnapshot) {
           console.log("entramos a hacer consulta");
+    
           // Ciclo para revisar cada evento reservado para la nueva fecha
           querySnapshot.forEach(function(doc) {
-            console.log("este es el doc: " + doc);
-            var horaEvento = doc.data().horaEvento; // Hora en minutos (ej. 540 para 09:00)
-            var duracionEvento = doc.data().duracionEvento; // Duración en minutos (ej. 120 para 2 horas)
-            console.log("hora del evento con clave: " + doc.data().claveEvento + ": " + horaEvento);
-            console.log("duracion del evento con clave: " + doc.data().claveEvento + ": " + duracionEvento);
+            var data = doc.data();
+    
+            // ---------- FILTRO ADICIONAL ----------
+            // Ignorar (no marcar como ocupados) los eventos que sean:
+            // capitulo === "nacional"  &&  tipoEvento === "escuela-directores"
+            if (data && data.capitulo === "nacional" && data.tipoEvento === "escuela-directores") {
+              console.log("Ignorando (escuela-directores nacional) doc:", doc.id);
+              return; // saltar este documento
+            }
+            // ---------------------------------------
+    
+            console.log("este es el doc: " + doc.id);
+            var horaEvento = Number(data.horaEvento); // Hora en minutos (ej. 540 para 09:00)
+            var duracionEvento = Number(data.duracionEvento); // Duración en minutos (ej. 120 para 2 horas)
+            console.log("hora del evento con clave: " + data.claveEvento + ": " + horaEvento);
+            console.log("duracion del evento con clave: " + data.claveEvento + ": " + duracionEvento);
             // Calcular los índices de inicio y fin del intervalo que ocupará el evento
             var inicioIntervalo = Math.floor((horaEvento - 480) / 30);
-            var finIntervalo = inicioIntervalo + duracionEvento / 30;
+            var finIntervalo = inicioIntervalo + Math.floor(duracionEvento / 30);
             console.log("inicio intervalo: " + inicioIntervalo);
             console.log("fin intervalo: " + finIntervalo);
-
+    
+            // Asegurar límites válidos
+            inicioIntervalo = Math.max(0, inicioIntervalo);
+            finIntervalo = Math.min(28, finIntervalo);
+    
             // Marcar los intervalos como ocupados en el arreglo de disponibilidad
             for (var i = inicioIntervalo; i < finIntervalo; i++) {
               disponibilidadHorarios[i] = false;
@@ -1741,17 +1782,21 @@
             console.log("estas son las disponibilidades de los intervalos:");
             console.log(disponibilidadHorarios);
           });
-
+    
           // Calcula los índices de inicio y fin de los intervalos para la nueva hora y duración
           var inicioNuevoIntervalo = Math.floor((nuevaHora - 480) / 30);
-          var finNuevoIntervalo = inicioNuevoIntervalo + nuevaDuracion / 30;
-
+          var finNuevoIntervalo = inicioNuevoIntervalo + Math.floor(nuevaDuracion / 30);
+    
+          // Asegurar límites válidos
+          inicioNuevoIntervalo = Math.max(0, inicioNuevoIntervalo);
+          finNuevoIntervalo = Math.min(28, finNuevoIntervalo);
+    
           var disponibilidadMatutino = true;
           var disponibilidadVesperino = true;
           var disponibilidadNocturno = true;
-
+    
           // Colocar los intervalos de un mismo paquete horario (matutino, vesperino o nocturno) ocupados
-          // Verificar el paquete horario matutino (intervalos 1 al 10, es decir, 8:00 a 13:00)
+          // Verificar el paquete horario matutino (intervalos 0 al 9, es decir, 8:00 a 13:00)
           for (var i = 0; i <= 9; i++) {
             if (!disponibilidadHorarios[i]) {
               for (var j = 0; j <= 9; j++) {
@@ -1761,8 +1806,8 @@
               break; // Al menos un intervalo está ocupado, salir del ciclo
             }
           }
-
-          // Verificar el paquete horario vespertino (intervalos 11 al 20, es decir, 13:00 a 18:00)
+    
+          // Verificar el paquete horario vespertino (intervalos 10 al 19, es decir, 13:00 a 18:00)
           for (var i = 10; i <= 19; i++) {
             if (!disponibilidadHorarios[i]) {
               for (var j = 10; j <= 19; j++) {
@@ -1772,8 +1817,8 @@
               break; // Al menos un intervalo está ocupado, salir del ciclo
             }
           }
-
-          // Verificar el paquete horario nocturno (intervalos 21 al 28, es decir, 18:00 a 22:00)
+    
+          // Verificar el paquete horario nocturno (intervalos 20 al 27, es decir, 18:00 a 22:00)
           for (var i = 20; i <= 27; i++) {
             if (!disponibilidadHorarios[i]) {
               for (var j = 20; j <= 27; j++) {
@@ -1783,97 +1828,98 @@
               break; // Al menos un intervalo está ocupado, salir del ciclo
             }
           }
-
-          // Calcula los índices de inicio y fin de los intervalos para la nueva hora y duración
-          var inicioNuevoIntervalo = Math.floor((nuevaHora - 480) / 30);
-          var finNuevoIntervalo = inicioNuevoIntervalo + nuevaDuracion / 30;
-
+    
           // Verifica si alguno de los nuevos intervalos está ocupado
           var algunIntervaloOcupado = false;
-          for (var i = inicioNuevoIntervalo; i < finNuevoIntervalo; i++) {
-            console.log("esta es la disponibilidad del intervalo " + i + ": " + disponibilidadHorarios[i]);
-            if (!disponibilidadHorarios[i]) {
-              console.log("está ocupado el intervalo " + i);
+          for (var k = inicioNuevoIntervalo; k < finNuevoIntervalo; k++) {
+            console.log("esta es la disponibilidad del intervalo " + k + ": " + disponibilidadHorarios[k]);
+            if (!disponibilidadHorarios[k]) {
+              console.log("está ocupado el intervalo " + k);
               algunIntervaloOcupado = true;
               break; // Si uno está ocupado, no es necesario verificar los demás
             }
           }
-
+    
           if (algunIntervaloOcupado) {
             // Al menos uno de los intervalos no está disponible
             // Mostrar alerta al usuario con SweetAlert2 en caso de estar TODO EL DÍA ocupado
             if (!disponibilidadMatutino && !disponibilidadVesperino && !disponibilidadNocturno) {
               Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN TODO EL DÍA! 📅',
-              text: 'Ya no es posible reservar en ningún espacio del día debido a que los 3 horarios para este día están ocupados. Prueba a consultar la disponibilidad en la sección azul y escoger otro día.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/LPTDqcy/AVATAR-NODISPOTODODIA-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la ejecución de la función
+                title: '¡SIN DISPONIBILIDAD EN TODO EL DÍA! 📅',
+                text: 'Ya no es posible reservar en ningún espacio del día debido a que los 3 horarios para este día están ocupados. Prueba a consultar la disponibilidad en la sección azul y escoger otro día.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                allowOutsideClick: true,
+                backdrop: true,
+                allowEscapeKey: true,
+                imageUrl: 'https://i.ibb.co/LPTDqcy/AVATAR-NODISPOTODODIA-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+              });
+              resolve(false);
+              return; // Detener la ejecución de la función
             }
             // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario matutino.
             if (!disponibilidadMatutino && inicioNuevoIntervalo <= 9) {
               Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN EL HORARIO MATUTINO! 🌤️',
-              text: 'El horario matutino ya está ocupado (8:00 a 13:00). Prueba cambiar el día, hora o duración.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la ejecución de la función
+                title: '¡SIN DISPONIBILIDAD EN EL HORARIO MATUTINO! 🌤️',
+                text: 'El horario matutino ya está ocupado (8:00 a 13:00). Prueba cambiar el día, hora o duración.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                allowOutsideClick: true,
+                backdrop: true,
+                allowEscapeKey: true,
+                imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+              });
+              resolve(false);
+              return; // Detener la ejecución de la función
             }
             // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario vespertino.
             if (!disponibilidadVesperino && inicioNuevoIntervalo <= 19) {
               Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN EL HORARIO VESPERTINO! ☀️',
-              text: 'El horario vespertino ya está ocupado (13:00 a 18:00). Prueba cambiar el día, hora o duración.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la ejecución de la función
+                title: '¡SIN DISPONIBILIDAD EN EL HORARIO VESPERTINO! ☀️',
+                text: 'El horario vespertino ya está ocupado (13:00 a 18:00). Prueba cambiar el día, hora o duración.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                allowOutsideClick: true,
+                backdrop: true,
+                allowEscapeKey: true,
+                imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+              });
+              resolve(false);
+              return; // Detener la ejecución de la función
             }
             // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario nocturno.
             if (!disponibilidadNocturno) {
               Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN EL HORARIO NOCTURNO! 🌕',
-              text: 'El horario nocturno ya está ocupado (18:00 a 22:00). Prueba cambiar el día, hora o duración.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la ejecución de la función
+                title: '¡SIN DISPONIBILIDAD EN EL HORARIO NOCTURNO! 🌕',
+                text: 'El horario nocturno ya está ocupado (18:00 a 22:00). Prueba cambiar el día, hora o duración.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                allowOutsideClick: true,
+                backdrop: true,
+                allowEscapeKey: true,
+                imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+              });
+              resolve(false);
+              return; // Detener la ejecución de la función
             }
           } else {
             // Todos los intervalos están disponibles
             // Realiza la edición de la reserva
             // ...
             resolve(true); // Resolver la promesa con 'true' si todos los intervalos están disponibles
+            return;
           }
         }).catch(function(error) {
           Swal.fire({
@@ -1882,20 +1928,21 @@
             icon: 'error',
             confirmButtonText: 'Aceptar',
             allowOutsideClick: true,
-            backdrop: true,  
+            backdrop: true,
             allowEscapeKey: true,
-            imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+            imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
           });
           console.log(error);
           resolve(false); // Resolver la promesa con 'false' en caso de error
           return;
         });
-      }
-    )}
+      });
+    }
 
+    
     function iniciarSesionJDN() {
         Swal.fire({
             title: 'Validación requerida',
@@ -1949,3 +1996,13 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
