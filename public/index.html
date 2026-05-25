@@ -64,16 +64,44 @@
   <title>SIEA (Sistema Integral de Espacios ANEIAP)</title>
   <style>
     body {
-      /* Establece la imagen de fondo */
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      color: rgb(0, 0, 0);
+
+      /* Imagen de fondo */
       background-image: url('https://i.ibb.co/gzwRXW2/FOTO-FONDO-SIEA-SNC2023-1.jpg');
-      /* Fija la imagen de fondo para que no se desplace con el contenido */
       background-attachment: fixed;
-      /* Escala la imagen para cubrir todo el cuerpo */
-      background-size: contain;
-      /* Centra la imagen */
+      background-size: cover; /* mejor que contain para cubrir toda la pantalla */
       background-position: center;
-      /* Establece un color de fondo de respaldo */
-      background-color: #0b2447; /* Este color será visible si la imagen no se carga */
+      background-color: #000000; /* color de respaldo */
+    }
+    /* Contenedor de nieve: ocupa toda la pantalla pero no bloquea scroll */
+    #snow-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* IMPORTANTE: no bloquea clics ni scroll */
+      overflow: hidden; /* mantiene copos dentro */
+      z-index: 2; /* nieve por encima */
+    }
+    .snowflake {
+      position: absolute;
+      top: -10px;
+      color: white;
+      font-size: 1em;
+      user-select: none;
+      pointer-events: none;
+      animation-name: fall;
+      animation-duration: 10s;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(360deg); }
     }
     .black-text {
       color: black;
@@ -257,7 +285,7 @@
       background-color: #DC1E1E;
     }
     .acordeon4 {
-      background-color: #600082;
+      background-color: #648b9b;
     }
     .acordeon5 {
       background-color: #4d4d4d;
@@ -295,7 +323,7 @@
       background-color: red;
     }
     .button-evaluar {
-      background-color: #600082;
+      background-color: #648b9b;
     }
     .button-actualizar {
       background-color: #4d4d4d;
@@ -323,7 +351,7 @@
       text-align: center;
       font-size: 18px;
       margin-bottom: 10px; /* Añadido para separar el botón de los campos */
-      width: 230px; /* Ocupar el ancho del contenedor */
+      width: 170px; /* Ocupar el ancho del contenedor */
     }
     /* Estilo para los campos de correo del forms y contraseña */
     input[type="email"],
@@ -634,18 +662,29 @@
       <span class="icon"></span>
     </button>-->
 
+  
   <!-- Formulario con campos de correo, contraseña y botón para iniciar sesión-->
+  
   <form>
-    <input type="email" id="correo" name="correo" required placeholder="Correo ANEIAP">
-    <input type="password" id="contrasena" name="contrasena" required placeholder="Contraseña" onkeydown="if(event.keyCode === 13) validar_login()">
-    <button type="button" id="btnInformeFI" class="button-descargas" onclick="generarInformePDF(event)" style="background-color: #67dd19; color: white; display: none;">Generar Informe FI</button>
-    <button type="button" id="btnInformeIE" class="button-descargas" onclick="generarInformeIE(event)" style="background-color: #1926dd; color: white; display: none;">Generar Informe IE</button>
-    <button type="button" class="button-descargas" onclick="generarAgendaFormativa(event)" style="background-color: #006d37; color: white;">Agenda Formativa</button>
-
-    <button type="button" class="button-admin" onclick="EjecutarAdmin(event)" style="font-size: 12px; padding: 2px 5px; border: none; background: none; cursor: pointer;">✏</button>  
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+      <input type="email" id="correo" name="correo" required placeholder="Correo ANEIAP">
+      <input type="password" id="contrasena" name="contrasena" required placeholder="Contraseña" onkeydown="if(event.keyCode === 13) validar_login()">
+      <button type="button" id="btnInformeFI" class="button-descargas" onclick="generarInformeFI(event)" style="background-color: #006d37; color: white; display: none;">Generar Informe FI</button>
+      <button type="button" id="btnInformeIE" class="button-descargas" onclick="generarInformeIE(event)" style="background-color: #006d37; color: white; display: none;">Generar Informe IE</button>
+      <button type="button" id="btnDirectorio" class="button-descargas" onclick="mostrarDirectorioGeneral()" style="background-color: #22a536; color: white; display: none;">Ver Directorios</button>
+      <button type="button" class="button-login" onclick="generarAgendaFormativaFI(event)" style="background-color: #7ba460; color: white;">Agenda FI</button>
+      <button type="button" class="button-login" onclick="generarAgendaFormativaIE(event)" style="background-color: #7ba460; color: white;">Agenda IE</button>
+      <button type="button" class="button-admin" onclick="EjecutarAdmin(event)" style="font-size: 12px; padding: 2px 5px; border: none; background: none; cursor: pointer;">✏</button>
+    </div>
   </form>
+
+  <audio id="backgroundMusic" loop="false"></audio>
+  
   <button type="button" class="button-login" onclick="validar_login()">Loguéate</button>
-  <button type="button" class="button-cambio-credenciales" onclick="cambiar_credenciales()">Cambiar Credenciales</button>
+  <button type="button" class="button-cambio-credenciales" onclick="cambiar_credenciales()">Cambiar Datos</button>
+  <button id="playBtn" onclick="toggleMusic('play')">▶️</button>
+  <button id="nextBtn" onclick="toggleMusic('next')">⏭️</button>
+  
   <!-- Elemento para mostrar el saludo -->
   <div id="saludoUsuario" style="color: orange;">¡Hola, ANEIAPo!</div>
 
@@ -853,6 +892,8 @@
                 <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
                 <option value="uniguajira">UNIGUAJIRA</option>
                 <option value="unimagdalena">UNIMAGDALENA</option>
+                <option value="usasm">USASM</option>
+                <option value="unicaribe">UNICARIBE</option>
                 <option value="uniatlantico">UNIATLÁNTICO</option>
                 <option value="uninorte">UNINORTE</option>
                 <option value="unisimon">UNISIMÓN</option>
@@ -861,7 +902,6 @@
                 <option value="utb">UTB</option>
                 <option value="upbmonteria">UPBMONTERÍA</option>
                 <option value="unicordoba">UNICÓRDOBA</option>
-                <option value="areandina">AREANDINA</option>
                 <option value="ufps">UFPS</option>
                 <option value="unalmed">UNALMED</option>
                 <option value="udea">UDEA</option>
@@ -872,8 +912,8 @@
                 <option value="unalbog">UNALBOG</option>
                 <option value="univalle">UNIVALLE</option>
                 <option value="icesi">ICESI</option>
+                <option value="uao">UAO</option>
                 <option value="usc">USC</option>
-                <option value="librecali">LIBRECALI</option>
                 <option value="nacional">ANEIAP NACIONAL</option>
               </select>
             </div>
@@ -931,6 +971,8 @@
               <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
               <option value="uniguajira">UNIGUAJIRA</option>
               <option value="unimagdalena">UNIMAGDALENA</option>
+              <option value="usasm">USASM</option>
+              <option value="unicaribe">UNICARIBE</option>
               <option value="uniatlantico">UNIATLÁNTICO</option>
               <option value="uninorte">UNINORTE</option>
               <option value="unisimon">UNISIMÓN</option>
@@ -939,7 +981,6 @@
               <option value="utb">UTB</option>
               <option value="upbmonteria">UPBMONTERÍA</option>
               <option value="unicordoba">UNICÓRDOBA</option>
-              <option value="areandina">AREANDINA</option>
               <option value="ufps">UFPS</option>
               <option value="unalmed">UNALMED</option>
               <option value="udea">UDEA</option>
@@ -950,8 +991,8 @@
               <option value="unalbog">UNALBOG</option>
               <option value="univalle">UNIVALLE</option>
               <option value="icesi">ICESI</option>
+              <option value="uao">UAO</option>
               <option value="usc">USC</option>
-              <option value="librecali">LIBRECALI</option>
               <option value="nacional">ANEIAP NACIONAL</option>
             </select>
           </div>
@@ -1087,6 +1128,8 @@
                   <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
                   <option value="uniguajira">UNIGUAJIRA</option>
                   <option value="unimagdalena">UNIMAGDALENA</option>
+                  <option value="usasm">USASM</option>
+                  <option value="unicaribe">UNICARIBE</option>
                   <option value="uniatlantico">UNIATLÁNTICO</option>
                   <option value="uninorte">UNINORTE</option>
                   <option value="unisimon">UNISIMÓN</option>
@@ -1095,7 +1138,6 @@
                   <option value="utb">UTB</option>
                   <option value="upbmonteria">UPBMONTERÍA</option>
                   <option value="unicordoba">UNICÓRDOBA</option>
-                  <option value="areandina">AREANDINA</option>
                   <option value="ufps">UFPS</option>
                   <option value="unalmed">UNALMED</option>
                   <option value="udea">UDEA</option>
@@ -1106,8 +1148,8 @@
                   <option value="unalbog">UNALBOG</option>
                   <option value="univalle">UNIVALLE</option>
                   <option value="icesi">ICESI</option>
+                  <option value="uao">UAO</option>
                   <option value="usc">USC</option>
-                  <option value="librecali">LIBRECALI</option>
                   <option value="nacional">ANEIAP NACIONAL</option>
                 </select>
             </div>
@@ -1265,6 +1307,8 @@
                 <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
                 <option value="uniguajira">UNIGUAJIRA</option>
                 <option value="unimagdalena">UNIMAGDALENA</option>
+                <option value="usasm">USASM</option>
+                <option value="unicaribe">UNICARIBE</option>
                 <option value="uniatlantico">UNIATLÁNTICO</option>
                 <option value="uninorte">UNINORTE</option>
                 <option value="unisimon">UNISIMÓN</option>
@@ -1273,7 +1317,6 @@
                 <option value="utb">UTB</option>
                 <option value="upbmonteria">UPBMONTERÍA</option>
                 <option value="unicordoba">UNICÓRDOBA</option>
-                <option value="areandina">AREANDINA</option>
                 <option value="ufps">UFPS</option>
                 <option value="unalmed">UNALMED</option>
                 <option value="udea">UDEA</option>
@@ -1284,8 +1327,8 @@
                 <option value="unalbog">UNALBOG</option>
                 <option value="univalle">UNIVALLE</option>
                 <option value="icesi">ICESI</option>
+                <option value="uao">UAO</option>
                 <option value="usc">USC</option>
-                <option value="librecali">LIBRECALI</option>
                 <option value="nacional">ANEIAP NACIONAL</option>
               </select>
               </div>
@@ -1401,6 +1444,8 @@
               <option value="" disabled selected hidden>Selecciona el capítulo que organizó el espacio.</option>
               <option value="uniguajira">UNIGUAJIRA</option>
               <option value="unimagdalena">UNIMAGDALENA</option>
+              <option value="usasm">USASM</option>
+              <option value="unicaribe">UNICARIBE</option>
               <option value="uniatlantico">UNIATLÁNTICO</option>
               <option value="uninorte">UNINORTE</option>
               <option value="unisimon">UNISIMÓN</option>
@@ -1409,7 +1454,6 @@
               <option value="utb">UTB</option>
               <option value="upbmonteria">UPBMONTERÍA</option>
               <option value="unicordoba">UNICÓRDOBA</option>
-              <option value="areandina">AREANDINA</option>
               <option value="ufps">UFPS</option>
               <option value="unalmed">UNALMED</option>
               <option value="udea">UDEA</option>
@@ -1420,8 +1464,8 @@
               <option value="unalbog">UNALBOG</option>
               <option value="univalle">UNIVALLE</option>
               <option value="icesi">ICESI</option>
+              <option value="uao">UAO</option>
               <option value="usc">USC</option>
-              <option value="librecali">LIBRECALI</option>
               <option value="nacional">ANEIAP NACIONAL</option>
             </select>
           </div>
@@ -1683,7 +1727,7 @@
                   <option value="entrenamiento-interno">ENTRENAMIENTO INTERNO 🏋🏻</option>
                   <option value="integracion-entorno">INTEGRACIÓN CON EL ENTORNO 🏭</option>
                   <option value="escuela-directores">ESCUELA DE DIRECTORES 📚</option>
-                  <option value="ninguno">No es espacio de FI o IE</option>
+                  <option value="ninguno">NINGUNA DE LAS ANTERIORES</option>
                 </select>
               </div>
               <div class="half">
@@ -1698,9 +1742,7 @@
                   <option value="habilidades-duras">HABILIDADES DURAS 🧠</option>
                   <option value="habilidades-blandas">HABILIDADES BLANDAS 🫂</option>
                   <option value="conocimiento-aneiap">CONOCIMIENTO ANEIAP 💚💙</option>
-                  <option value="integracion-entorno">INTEGRACIÓN CON EL ENTORNO 🏭</option>
-                  <option value="escuela-directores">ESCUELA DE DIRECTORES 📚</option>
-                  <option value="ninguno">No es espacio de FI o IE</option>
+                  <option value="ninguno">NINGUNA DE LAS ANTERIORES</option>
                 </select>
               </div>
             </div>
@@ -1799,6 +1841,83 @@
 
   <script>
 
+    const baseRuta = "https://raw.githubusercontent.com/AlessVilla/SIEA/master/public/";
+    const canciones = [
+      "z_90sFlav - Call me.mp3", 
+      //"z_C418 - Sweden - Minecraft Volume Alpha.mp3",
+      "z_CKay - Love Nwantiti (TikTok Remix) (Lyrics) I am so obsessed I want to chop your nkwobi.mp3",
+      "z_Lone Tusker - Birds Of A Feather (Deep House Remix).mp3",
+      "z_Lone Tusker - Coastline (Hollow Coves Deep House Remix).mp3",
+      "z_Steven Universe theme song but it's lofi hip hop.mp3",
+      "z_Wii Music - Gaming Background Music (HD).mp3",
+      
+      "z_LMFAO - Party Rock Anthem (Lyrics) ft. Lauren Bennett, GoonRock.mp3",
+      "z_Miguel Bueno x Juan Duque - Solcito  Video Oficial.mp3",
+      "z_UWAIE - Kapo (Video Oficial).mp3",
+      "z_Thee Sacred Souls - Can I Call You Rose.mp3",
+      "z_John Newman - Love Me Again.mp3",
+      "z_Daft Punk - Instant Crush (Lyrics) ft. Julian Casablancas.mp3",
+      "z_Lonely_RM.mp3",
+      "z_Kevin Florez Ft Simon - La Invite A Bailar [Oficial Video].mp3",
+      "z_BTS, Jungkook - Dreamers (Lyrics) FIFA World Cup 2022 Song.mp3",
+      "z_(Jung Kook) Never Let Go Lyric Video.mp3",
+      
+      "z_public_for-her-chill-upbeat-summel-travel-vlog-and-ig-music-royalty-free-use-202298.mp3"
+      
+    ];
+
+    const audio = new Audio();
+    let isPlaying = false;
+    const button = document.getElementById("playBtn");
+
+    function toggleMusic(action) {
+      // Función interna para reproducir una canción aleatoria
+      function reproducirAleatoria() {
+        const indice = Math.floor(Math.random() * canciones.length);
+        const cancion = canciones[indice];
+        audio.src = `${baseRuta}${encodeURIComponent(cancion)}`;
+        audio.volume = 0.15;
+        console.log("Reproduciendo:", audio.src);
+        audio.play();
+        isPlaying = true;
+        button.textContent = "⏸️";
+
+        // Al terminar, reproduce otra aleatoria
+        audio.onended = () => reproducirAleatoria();
+      }
+
+      if (action === "play") {
+        if (!isPlaying) {
+          // Si no está reproduciendo, reanuda si ya hay src o elige una nueva
+          if (!audio.src) {
+            reproducirAleatoria();
+          } else {
+            audio.play();
+            isPlaying = true;
+            button.textContent = "⏸️";
+          }
+        } else {
+          // Si está reproduciendo, pausa
+          audio.pause();
+          isPlaying = false;
+          button.textContent = "▶️";
+        }
+      }
+
+      if (action === "next") {
+        // Si está sonando, pasa a la siguiente aleatoria
+        if (isPlaying) {
+          reproducirAleatoria();
+        } else {
+          // Si está en pausa, carga otra pero no la reproduce
+          const indice = Math.floor(Math.random() * canciones.length);
+          const cancion = canciones[indice];
+          audio.src = `${baseRuta}${encodeURIComponent(cancion)}`;
+          console.log("Preparada siguiente:", audio.src);
+        }
+      }
+    }
+    
     // Variables para la evaluación del espacio dentro del Acordeón 4 y actualización de info del espacio en Acordeón 5:
     var fechaHoy = new Date().toISOString().slice(0, 10);
     var capituloEspacioSelect = document.getElementById("capitulo-espacio");
@@ -1857,12 +1976,11 @@
 
     // Listener para el caso en que el usuario seleccione Entrenamiento Interno en tipo de espacio
     document.addEventListener("DOMContentLoaded", function() {
-      var tipoEspacio = document.getElementById("tipo-espacio");
-      var areaTrabajo = document.getElementById("area-trabajo");
-      var nombreEspacioActualizar = document.getElementById("nombre-espacio-actualizar");
+      const tipoEspacio   = document.getElementById("tipo-espacio");
+      const areaTrabajo   = document.getElementById("area-trabajo");
 
-      // Guardar las opciones originales del campo areaTrabajo
-      var opcionesOriginalesAreaTrabajo = `
+      // Opciones originales (FI u otros)
+      const opcionesOriginalesAreaTrabajo = `
         <option value="" disabled selected hidden>Selecciona el área de trabajo del espacio.</option>
         <option value="academico">ACADÉMICO 💚</option>
         <option value="comunicaciones">COMUNICACIONES 🩵</option>
@@ -1872,61 +1990,73 @@
         <option value="habilidades-duras">HABILIDADES DURAS 🧠</option>
         <option value="habilidades-blandas">HABILIDADES BLANDAS 🫂</option>
         <option value="conocimiento-aneiap">CONOCIMIENTO ANEIAP 💚💙</option>
-        <option value="escuela-directores">ESCUELA DE DIRECTORES 📚</option>
-        <option value="ninguno">No es espacio de FI o IE</option>
+        <option value="ninguno">NINGUNA DE LAS ANTERIORES</option>
       `;
 
-      tipoEspacio.addEventListener("change", function() {
-        if (tipoEspacio.value === "integracion-entorno") {
-          // Vaciar el campo de área de trabajo
-          if (!areaTrabajo.value) {
-          areaTrabajo.innerHTML = '<option value="" disabled selected hidden>Selecciona el área de trabajo del espacio.</option>';
-          }
-          // Obtener el nombre del espacio
-          var nombreEspacio = nombreEspacioActualizar.value || "No has seleccionado aún un espacio";
+      // Opciones para Integración con el Entorno (IE)
+      const opcionesIE = `
+        <option value="" disabled selected hidden>Selecciona el área de trabajo del espacio.</option>
+        <option value="foro-conversatorio">Foro/Conversatorio 🗣</option>
+        <option value="taller">Taller 🛠</option>
+        <option value="visita-tecnica-industrial">Visita técnica/industrial 🥾</option>
+        <option value="simulacion">Simulación 🖥</option>
+        <option value="mentoria">Mentoría 🧮</option>
+        <option value="voluntariado-campana">Voluntariado/Campaña 📋</option>
+      `;
 
-          // Mostrar alerta para ingresar el área de trabajo
-          Swal.fire({
-            title: 'Ingrese el área de trabajo para el espacio de integración con el entorno',
-            text: `Espacio seleccionado: 🟩${nombreEspacio.toUpperCase()}🟦`,
-            input: 'text',
-            inputPlaceholder: 'Escriba el área de trabajo aquí...',
-            inputAttributes: {
-              maxlength: 80
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Aceptar',
-            cancelButtonText: 'Cancelar',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            allowEnterKey: true,
-            inputValidator: (value) => {
-              if (!value) {
-                return 'Debe ingresar un área de trabajo!';
-              }
-              if (value.length > 80) {
-                return 'El área de trabajo no debe tener más de 80 caracteres!';
-              }
-            }
-          }).then((result) => {
-            if (result.isConfirmed) {
-              // Asignar el valor ingresado al campo de área de trabajo
-              areaTrabajo.innerHTML = `<option value="${result.value}" selected>${result.value}</option>`;
-            } else {
-              // Restaurar el valor original del campo de tipo de espacio si se cancela
-              tipoEspacio.value = "";
-              if (!areaTrabajo.value) {
-              areaTrabajo.innerHTML = opcionesOriginalesAreaTrabajo;
-              }
-            }
-          });
+      // Opciones para Escuela de Directores (ED) opción única
+      const opcionesED = `
+        <option value="escuela-directores" selected>ESCUELA DE DIRECTORES 📚</option>
+      `;
+
+      // Opciones para Ninguna de las Anteriores (NA) opción única
+      const opcionesNA = `
+        <option value="ninguno" selected>NINGUNA DE LAS ANTERIORES</option>
+      `;
+
+      // Helper para reemplazar opciones y mostrar placeholder
+      function setOpciones(selectEl, optionsHTML) {
+        selectEl.innerHTML = optionsHTML;
+        selectEl.selectedIndex = 0; // muestra el placeholder
+      }
+
+      // Listener principal (ocultar/mostrar label y select según el tipo)
+      tipoEspacio.addEventListener("change", function () {
+        const labelAT = document.querySelector('label[for="area-trabajo"]');
+
+        if (tipoEspacio.value === "integracion-entorno") {
+          setOpciones(areaTrabajo, opcionesIE);
+          if (labelAT) labelAT.style.display = "";
+          areaTrabajo.style.display = "";
+        } else if (tipoEspacio.value === "escuela-directores") {
+          setOpciones(areaTrabajo, opcionesED); // única opción ya selected
+          if (labelAT) labelAT.style.display = "none";
+          areaTrabajo.style.display = "none";
+        } else if (tipoEspacio.value === "ninguno") {
+          setOpciones(areaTrabajo, opcionesNA); // única opción ya selected
+          if (labelAT) labelAT.style.display = "none";
+          areaTrabajo.style.display = "none";
         } else {
-          // Restaurar las opciones originales del campo areaTrabajo si el valor no es "integracion-entorno"
-          if (!areaTrabajo.value) {
-          areaTrabajo.innerHTML = opcionesOriginalesAreaTrabajo;
-          }
+          setOpciones(areaTrabajo, opcionesOriginalesAreaTrabajo);
+          if (labelAT) labelAT.style.display = "";
+          areaTrabajo.style.display = "";
         }
+
+        // Opcional: si otras lógicas dependen del change de area-trabajo
+        areaTrabajo.dispatchEvent(new Event('change', { bubbles: true }));
       });
+
+      // Estado inicial
+      if (tipoEspacio.value === "integracion-entorno") {
+        setOpciones(areaTrabajo, opcionesIE);
+      } else if (tipoEspacio.value === "escuela-directores") {
+        setOpciones(areaTrabajo, opcionesED);
+      } else if (tipoEspacio.value === "ninguno") {
+        setOpciones(areaTrabajo, opcionesNA);
+      } else {
+        setOpciones(areaTrabajo, opcionesOriginalesAreaTrabajo);
+      }
+      
     });
 
     // Variable global del correo del usuario para mirar si inició sesión un DCA o DNA.
@@ -2056,9 +2186,7 @@
               <option value="habilidades-duras">HABILIDADES DURAS 🧠</option>
               <option value="habilidades-blandas">HABILIDADES BLANDAS 🫂</option>
               <option value="conocimiento-aneiap">CONOCIMIENTO ANEIAP 💚💙</option>
-              <option value="integracion-entorno">INTEGRACIÓN CON EL ENTORNO 🏭</option>
-              <option value="escuela-directores">ESCUELA DE DIRECTORES 📚</option>
-              <option value="ninguno">No es espacio de FI o IE</option>
+              <option value="ninguno">NINGUNA DE LAS ANTERIORES</option>
             `;
             areaTrabajo.innerHTML = opcionesOriginalesAreaTrabajo;
               // Verificar si se encontró algún documento con el nombre del espacio seleccionado
@@ -2807,7 +2935,7 @@
 
         // Verificar el formato del teléfono del organizador (debe empezar por 3 y tener 10 dígitos)
         var telefonoOrganizador = document.getElementById("telefono-organizador").value;
-        var telefonoOrganizadorRegex = /^3\d{9}$/;
+        var telefonoOrganizadorRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
         // Validación de datos para que el teléfono del organizador efectivamente sea un celular válido.
         if (!telefonoOrganizadorRegex.test(telefonoOrganizador)) {
@@ -2829,7 +2957,7 @@
 
         // En caso de haber diligenciado el teléfono del ponente, valida que sea una celular válido.
         if (telefonoPonente !== "") {
-          var telefonoPonenteRegex = /^3\d{9}$/;
+          var telefonoPonenteRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
           if (!telefonoPonenteRegex.test(telefonoPonente)) {
             Swal.fire({
@@ -3102,7 +3230,7 @@
 
         // Verificar el formato del teléfono del organizador (debe empezar por 3 y tener 10 dígitos)
         var telefonoOrganizadorReserva = document.getElementById("telefono-organizador-reserva").value;
-        var telefonoOrganizadorReservaRegex = /^3\d{9}$/;
+        var telefonoOrganizadorReservaRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
         if (!telefonoOrganizadorReservaRegex.test(telefonoOrganizadorReserva)) {
           Swal.fire({
@@ -3765,6 +3893,7 @@
         // Acá se verifica que se haya insertado una fecha, si no insertaste nada, para el proceso y le notifica al usuario.
         if (fechaConsulta.trim() === "") {
           // Mostrar mensaje de error si no se ha seleccionado una fecha válida
+          /*
           Swal.fire({
             title: '¡FECHA NO SELECCIONADA!',
             text: 'Por favor, selecciona una fecha para consultar la disponibilidad.',
@@ -3778,10 +3907,12 @@
             imageHeight: 235, // Alto de la imagen en píxeles
             imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
           });
+          */
           return;
         }
         if (capituloConsulta.trim() === "") {
           // Mostrar mensaje de error si no se ha seleccionado una fecha válida
+          /*
           Swal.fire({
             title: '¡CAPÍTULO NO SELECCIONADO!',
             text: 'Por favor, selecciona el capítulo del cual deseas consultar la disponibilidad.',
@@ -3795,6 +3926,7 @@
             imageHeight: 235, // Alto de la imagen en píxeles
             imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom-end')
           });
+          */
           return;
         }
         /* Comentario opcional por si se desea considerar o no la limitación de fecha de hoy al consultar
@@ -3820,7 +3952,7 @@
         var reservasRef = firebase.firestore().collection("reservas");
         
         var consultaCapitulo = reservasRef.where("fechaEvento", "==", fechaConsulta).where("capitulosOrganizadores", "array-contains", capituloConsulta);
-        var consultaNacional = reservasRef.where("fechaEvento", "==", fechaConsulta).where("capitulosOrganizadores", "array-contains", "nacional");
+        var consultaNacional = reservasRef.where("fechaEvento", "==", fechaConsulta).where("capitulosOrganizadores", "array-contains", "nacional").where("tipoEvento", "!=", "escuela-directores");
 
         Promise.all([consultaCapitulo.get(), consultaNacional.get()])
           .then(function(results) {
@@ -3963,6 +4095,7 @@
       // Verificar que se haya seleccionado una fecha y capítulo
       if (fechaConsultaDirecta.trim() === "" || capituloConsulta.trim() === "") {
         // Mostrar mensaje de error si no se ha seleccionado una fecha o capítulo válidos
+        /*
         Swal.fire({
           title: '¡FECHA O CAPÍTULO NO SELECCIONADOS!',
           text: 'Por favor, selecciona una fecha y un capítulo para consultar la disponibilidad semanal.',
@@ -3976,6 +4109,7 @@
           imageHeight: 235,
           imagePosition: 'top-start'
         });
+        */
         return;
       }
 
@@ -4059,7 +4193,7 @@
       var reservasRef = firebase.firestore().collection("reservas");
       
       var consultaCapitulo = reservasRef.where("fechaEvento", "==", fechaDiaTipoFirebase).where("capitulosOrganizadores", "array-contains", capituloConsulta);
-      var consultaNacional = reservasRef.where("fechaEvento", "==", fechaDiaTipoFirebase).where("capitulosOrganizadores", "array-contains", "nacional");
+      var consultaNacional = reservasRef.where("fechaEvento", "==", fechaDiaTipoFirebase).where("capitulosOrganizadores", "array-contains", "nacional").where("tipoEvento", "!=", "escuela-directores");
 
       Promise.all([consultaCapitulo.get(), consultaNacional.get()])
         .then(function(results) {
@@ -4268,6 +4402,8 @@
       const bancoCorreos = {
           uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
           unimagdalena: "academico_unimagdalena@aneiap.co",
+          usasm: "academico_usasm@aneiap.co",
+          unicaribe: "academico_unicaribe@aneiap.co",
           uniatlantico: "academico_uniatlantico@aneiap.co",
           uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
           unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
@@ -4276,7 +4412,6 @@
           utb: "academico_utb@aneiap.co",
           upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
           unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
-          areandina: "academico_areandina@aneiap.co, interventoria_areandina@aneiap.co",
           ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
           unalmed: "academico_unalmed@aneiap.co",
           udea: "academico_udea@aneiap.co",
@@ -4287,8 +4422,8 @@
           unalbog: "academico_unalbog@aneiap.co",
           univalle: "academico_univalle@aneiap.co",
           icesi: "academico_icesi@aneiap.co",
+          uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
           usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-          librecali: "academico_librecali@aneiap.co, interventoria_librecali@aneiap.co",
           nacional: "academico@aneiap.co, interventoria@aneiap.co"
       };
 
@@ -4479,15 +4614,16 @@
       const bancoCorreos = {
         uniguajira: "comunicaciones_uniguajira@aneiap.co",
         unimagdalena: "comunicaciones_unimagdalena@aneiap.co",
+        usasm: "comunicaciones_usasm@aneiap.co",
+        unicaribe: "comunicaciones_unicaribe@aneiap.co",
         uniatlantico: "comunicaciones_uniatlantico@aneiap.co",
-        uninorte: "comunicaciones_uninorte@aneiap.co, geraldine.mendoza@aneiap.co",
+        uninorte: "comunicaciones_uninorte@aneiap.co, mariana.murcia@aneiap.co",
         unisimon: "comunicaciones_unisimon@aneiap.co",
         cuc: "comunicaciones_cuc@aneiap.co",
         librequilla: "comunicaciones_librequilla@aneiap.co",
         utb: "comunicaciones_utb@aneiap.co",
         upbmonteria: "comunicaciones_upbmonteria@aneiap.co",
         unicordoba: "comunicaciones_unicordoba@aneiap.co",
-        areandina: "comunicaciones_areandina@aneiap.co",
         ufps: "comunicaciones_ufps@aneiap.co",
         unalmed: "comunicaciones_unalmed@aneiap.co",
         udea: "comunicaciones_udea@aneiap.co",
@@ -4498,8 +4634,8 @@
         unalbog: "comunicaciones_unalbog@aneiap.co",
         univalle: "comunicaciones_univalle@aneiap.co",
         icesi: "comunicaciones_icesi@aneiap.co",
+        uao: "comunicaciones_uao@aneiap.co",
         usc: "comunicaciones_usc@aneiap.co",
-        librecali: "comunicaciones_librecali@aneiap.co",
         nacional: "proy_diseno_nacional@aneiap.co"
       };
 
@@ -4728,6 +4864,8 @@
       const bancoCorreos = {
         uniguajira: "comunicaciones_uniguajira@aneiap.co",
         unimagdalena: "comunicaciones_unimagdalena@aneiap.co",
+        usasm: "comunicaciones_usasm@aneiap.co",
+        unicaribe: "comunicaciones_unicaribe@aneiap.co",
         uniatlantico: "comunicaciones_uniatlantico@aneiap.co",
         uninorte: "comunicaciones_uninorte@aneiap.co",
         unisimon: "comunicaciones_unisimon@aneiap.co",
@@ -4736,7 +4874,6 @@
         utb: "comunicaciones_utb@aneiap.co",
         upbmonteria: "comunicaciones_upbmonteria@aneiap.co",
         unicordoba: "comunicaciones_unicordoba@aneiap.co",
-        areandina: "comunicaciones_areandina@aneiap.co",
         ufps: "comunicaciones_ufps@aneiap.co",
         unalmed: "comunicaciones_unalmed@aneiap.co",
         udea: "comunicaciones_udea@aneiap.co",
@@ -4747,8 +4884,8 @@
         unalbog: "comunicaciones_unalbog@aneiap.co",
         univalle: "comunicaciones_univalle@aneiap.co",
         icesi: "comunicaciones_icesi@aneiap.co",
+        uao: "comunicaciones_uao@aneiap.co",
         usc: "comunicaciones_usc@aneiap.co",
-        librecali: "comunicaciones_librecali@aneiap.co",
         nacional: "proy_diseno_nacional@aneiap.co"
       };
 
@@ -4856,15 +4993,16 @@
         const bancoCorreos = {
             uniguajira: "comunicaciones_uniguajira@aneiap.co",
             unimagdalena: "comunicaciones_unimagdalena@aneiap.co",
+            usasm: "comunicaciones_usasm@aneiap.co",
+            unicaribe: "comunicaciones_unicaribe@aneiap.co",
             uniatlantico: "comunicaciones_uniatlantico@aneiap.co",
-            uninorte: "comunicaciones_uninorte@aneiap.co, geraldine.mendoza@aneiap.co",
+            uninorte: "comunicaciones_uninorte@aneiap.co, mariana.murcia@aneiap.co",
             unisimon: "comunicaciones_unisimon@aneiap.co",
             cuc: "comunicaciones_cuc@aneiap.co",
             librequilla: "comunicaciones_librequilla@aneiap.co",
             utb: "comunicaciones_utb@aneiap.co",
             upbmonteria: "comunicaciones_upbmonteria@aneiap.co",
             unicordoba: "comunicaciones_unicordoba@aneiap.co",
-            areandina: "comunicaciones_areandina@aneiap.co",
             ufps: "comunicaciones_ufps@aneiap.co",
             unalmed: "comunicaciones_unalmed@aneiap.co",
             udea: "comunicaciones_udea@aneiap.co",
@@ -4875,8 +5013,8 @@
             unalbog: "comunicaciones_unalbog@aneiap.co",
             univalle: "comunicaciones_univalle@aneiap.co",
             icesi: "comunicaciones_icesi@aneiap.co",
+            uao: "comunicaciones_uao@aneiap.co",
             usc: "comunicaciones_usc@aneiap.co",
-            librecali: "comunicaciones_librecali@aneiap.co",
             nacional: "proy_diseno_nacional@aneiap.co"
         };
 
@@ -4946,6 +5084,8 @@
         const bancoCorreos = {
             uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
             unimagdalena: "academico_unimagdalena@aneiap.co",
+            usasm: "academico_usasm@aneiap.co",
+            unicaribe: "academico_unicaribe@aneiap.co",
             uniatlantico: "academico_uniatlantico@aneiap.co",
             uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
             unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
@@ -4954,7 +5094,6 @@
             utb: "academico_utb@aneiap.co",
             upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
             unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
-            areandina: "academico_areandina@aneiap.co, interventoria_areandina@aneiap.co",
             ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
             unalmed: "academico_unalmed@aneiap.co",
             udea: "academico_udea@aneiap.co",
@@ -4965,8 +5104,8 @@
             unalbog: "academico_unalbog@aneiap.co",
             univalle: "academico_univalle@aneiap.co",
             icesi: "academico_icesi@aneiap.co",
+            uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
             usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-            librecali: "academico_librecali@aneiap.co, interventoria_librecali@aneiap.co",
             nacional: "academico@aneiap.co, interventoria@aneiap.co"
         };
 
@@ -5091,239 +5230,272 @@
 
     function verificarDisponibilidadEdicion() {
       return new Promise((resolve, reject) => {
-
-      // Obtener una referencia al documento del evento en Firestore
-      var claveEventoReserva = document.getElementById("clave-evento-reserva").value;
-      const eventoRef = firebase.firestore().collection("reservas").doc(claveEventoReserva);
-
-      console.log("actualizaremos la fecha a 31-dic");
-      // Actualizar el evento como si la nueva fecha fuera el 31 de diciembre de 2023, esto es con fines prácticas para
-      // lograr que este evento no sea tomado nunca dentro de la colección reservas debido a que cuando la
-      // nueva fecha sea igual a la actual (no cambió de fecha) no queremos que el evento se autobloquee la disponibilidad
-      return eventoRef.update({fechaEvento: "2023-12-31"})
-      .then(() => {
-        console.log("actualización exitosa, ahora obtendremos la consulta de todos los eventos en esa nueva fecha");
-        // Resto del código
-
-        var disponibilidadHorarios = Array(28).fill(true); // Inicialmente, todos los intervalos están disponibles
-
-        var claveEvento = document.getElementById("clave-evento-reserva").value;
-        var nuevaFecha = document.getElementById("fecha-evento-reserva").value;
-        var nuevaHora = document.getElementById("hora-evento-reserva").value;
-        var nuevaDuracion = document.getElementById("duracion-evento-reserva").value;
-        var nuevoCapitulo = document.getElementById("capitulo-organizador-reserva").value;
-
-        if (parseInt(nuevaDuracion) + parseInt(nuevaHora) > 1321) {
-          Swal.fire({
-            title: '¡ESTÁS INTENTANDO MOVER EL ESPACIO PARA DESPUÉS DE LAS 22:00 (10PM)!',
-            text: 'El evento debe estar programado para finalizar a más tardar hasta las 22:00, ve a la duración del mismo y edítala de tal forma que no se excedan las 22:00 (10pm)',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener el registro del evento
-        }
-
-        // Realiza una consulta a la base de datos para obtener las reservas en la nueva fecha
-        var reservasRef = firebase.firestore().collection("reservas");
-
-          console.log("ahora obtendremos la consulta de todos los eventos en esa nueva fecha");
-
-        // Primera consulta: Filtrar por "fechaEvento" igual a "nuevaFecha"
-        if (nuevoCapitulo === "nacional") {
-          // Si se seleccionó "ANEIAP NACIONAL", consultar solo las reservas para toda la Asociación
-          consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "==", "nacional");
-        } else {
-          // Consultar las reservas para el capítulo seleccionado y para toda la Asociación (ANEIAP NACIONAL)
-          consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "in", [nuevoCapitulo, "nacional"]);
-        }
-
-        console.log("queremos empezar a hacer la consulta");
-
-        // Realizar el filtrado para obtener intervalos disponibles y no disponibles
-        consulta.get().then(function(querySnapshot) {
-          console.log("entramos a hacer consulta");
-          // Ciclo para revisar cada evento reservado para la nueva fecha
-          querySnapshot.forEach(function(doc) {
-            console.log("este es el doc: " + doc);
-            var horaEvento = doc.data().horaEvento; // Hora en minutos (ej. 540 para 09:00)
-            var duracionEvento = doc.data().duracionEvento; // Duración en minutos (ej. 120 para 2 horas)
-            console.log("hora del evento con clave: " + doc.data().claveEvento + ": " + horaEvento);
-            console.log("duracion del evento con clave: " + doc.data().claveEvento + ": " + duracionEvento);
-            // Calcular los índices de inicio y fin del intervalo que ocupará el evento
-            var inicioIntervalo = Math.floor((horaEvento - 480) / 30);
-            var finIntervalo = inicioIntervalo + duracionEvento / 30;
-            console.log("inicio intervalo: " + inicioIntervalo);
-            console.log("fin intervalo: " + finIntervalo);
-
-            // Marcar los intervalos como ocupados en el arreglo de disponibilidad
-            for (var i = inicioIntervalo; i < finIntervalo; i++) {
-              disponibilidadHorarios[i] = false;
+    
+        // Obtener una referencia al documento del evento en Firestore
+        var claveEventoReserva = document.getElementById("clave-evento-reserva").value;
+        const eventoRef = firebase.firestore().collection("reservas").doc(claveEventoReserva);
+    
+        console.log("actualizaremos la fecha a 31-dic");
+        // Actualizar el evento temporalmente para que no se autobloquee
+        return eventoRef.update({ fechaEvento: "2023-12-31" })
+          .then(() => {
+            console.log("actualización exitosa, ahora obtendremos la consulta de todos los eventos en esa nueva fecha");
+    
+            var disponibilidadHorarios = Array(28).fill(true); // Inicialmente, todos los intervalos están disponibles
+    
+            var claveEvento = document.getElementById("clave-evento-reserva").value;
+            var nuevaFecha = document.getElementById("fecha-evento-reserva").value;
+            var nuevaHora = Number(document.getElementById("hora-evento-reserva").value);
+            var nuevaDuracion = Number(document.getElementById("duracion-evento-reserva").value);
+            var nuevoCapitulo = document.getElementById("capitulo-organizador-reserva").value;
+    
+            if (nuevaDuracion + nuevaHora > 1321) {
+              Swal.fire({
+                title: '¡ESTÁS INTENTANDO MOVER EL ESPACIO PARA DESPUÉS DE LAS 22:00 (10PM)!',
+                text: 'El evento debe estar programado para finalizar a más tardar hasta las 22:00, ve a la duración del mismo y edítala de tal forma que no se excedan las 22:00 (10pm)',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+              });
+              resolve(false);
+              return;
             }
-            console.log("estas son las disponibilidades de los intervalos:");
-            console.log(disponibilidadHorarios);
-          });
-          
-          var disponibilidadMatutino = true;
-          var disponibilidadVesperino = true;
-          var disponibilidadNocturno = true;
-
-          // Colocar los intervalos de un mismo paquete horario (matutino, vespertino o nocturno) ocupados
-          // Verificar el paquete horario matutino (intervalos 1 al 10, es decir, 8:00 a 13:00)
-          for (var i = 0; i <= 9; i++) {
-            if (!disponibilidadHorarios[i]) {
-              for (var j = 0; j <= 9; j++) {
-                disponibilidadHorarios[j] = false;
+    
+            // Realiza una consulta a la base de datos para obtener las reservas en la nueva fecha
+            var reservasRef = firebase.firestore().collection("reservas");
+            var consulta;
+    
+            console.log("ahora obtendremos la consulta de todos los eventos en esa nueva fecha");
+    
+            // Primera consulta: Filtrar por "fechaEvento" igual a "nuevaFecha"
+            if (nuevoCapitulo === "nacional") {
+              // Si se seleccionó "ANEIAP NACIONAL", consultar solo las reservas para toda la Asociación
+              consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "==", "nacional");
+            } else {
+              // Consultar las reservas para el capítulo seleccionado y para toda la Asociación (ANEIAP NACIONAL)
+              consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "in", [nuevoCapitulo, "nacional"]);
+            }
+    
+            console.log("queremos empezar a hacer la consulta");
+    
+            // Realizar el filtrado para obtener intervalos disponibles y no disponibles
+            consulta.get().then(function (querySnapshot) {
+              console.log("entramos a hacer consulta");
+    
+              // Ciclo para revisar cada evento reservado para la nueva fecha
+              querySnapshot.forEach(function (doc) {
+                var data = doc.data();
+    
+                // ---------- FILTRO ADICIONAL ----------
+                // Ignorar (no marcar como ocupados) los eventos que sean:
+                // capitulo === "nacional"  &&  tipoEvento === "escuela-directores"
+                if (data && data.capitulo === "nacional" && data.tipoEvento === "escuela-directores") {
+                  console.log("Ignorando (escuela-directores nacional) doc:", doc.id);
+                  return; // saltar este documento
+                }
+                // ---------------------------------------
+    
+                console.log("este es el doc: " + doc.id);
+                var horaEvento = Number(data.horaEvento); // Hora en minutos (ej. 540 para 09:00)
+                var duracionEvento = Number(data.duracionEvento); // Duración en minutos (ej. 120 para 2 horas)
+                console.log("hora del evento con clave: " + data.claveEvento + ": " + horaEvento);
+                console.log("duracion del evento con clave: " + data.claveEvento + ": " + duracionEvento);
+    
+                // Calcular los índices de inicio y fin del intervalo que ocupará el evento
+                var inicioIntervalo = Math.floor((horaEvento - 480) / 30);
+                var finIntervalo = inicioIntervalo + Math.floor(duracionEvento / 30);
+                console.log("inicio intervalo: " + inicioIntervalo);
+                console.log("fin intervalo: " + finIntervalo);
+    
+                // Asegurar límites válidos
+                inicioIntervalo = Math.max(0, inicioIntervalo);
+                finIntervalo = Math.min(28, finIntervalo);
+    
+                // Marcar los intervalos como ocupados en el arreglo de disponibilidad
+                for (var i = inicioIntervalo; i < finIntervalo; i++) {
+                  disponibilidadHorarios[i] = false;
+                }
+                console.log("estas son las disponibilidades de los intervalos:");
+                console.log(disponibilidadHorarios);
+              });
+    
+              var disponibilidadMatutino = true;
+              var disponibilidadVesperino = true;
+              var disponibilidadNocturno = true;
+    
+              // Colocar los intervalos de un mismo paquete horario (matutino, vespertino o nocturno) ocupados
+              // Verificar el paquete horario matutino (intervalos 0 al 9, es decir, 8:00 a 13:00)
+              for (var i = 0; i <= 9; i++) {
+                if (!disponibilidadHorarios[i]) {
+                  for (var j = 0; j <= 9; j++) {
+                    disponibilidadHorarios[j] = false;
+                  }
+                  disponibilidadMatutino = false;
+                  break;
+                }
               }
-              disponibilidadMatutino = false;
-              break; // Al menos un intervalo está ocupado, salir del ciclo
-            }
-          }
-
-          // Verificar el paquete horario vespertino (intervalos 11 al 20, es decir, 13:00 a 18:00)
-          for (var i = 10; i <= 19; i++) {
-            if (!disponibilidadHorarios[i]) {
-              for (var j = 10; j <= 19; j++) {
-                disponibilidadHorarios[j] = false;
+    
+              // Verificar el paquete horario vespertino (intervalos 10 al 19, es decir, 13:00 a 18:00)
+              for (var i = 10; i <= 19; i++) {
+                if (!disponibilidadHorarios[i]) {
+                  for (var j = 10; j <= 19; j++) {
+                    disponibilidadHorarios[j] = false;
+                  }
+                  disponibilidadVesperino = false;
+                  break;
+                }
               }
-              disponibilidadVesperino = false;
-              break; // Al menos un intervalo está ocupado, salir del ciclo
-            }
-          }
-
-          // Verificar el paquete horario nocturno (intervalos 21 al 28, es decir, 18:00 a 22:00)
-          for (var i = 20; i <= 27; i++) {
-            if (!disponibilidadHorarios[i]) {
-              for (var j = 20; j <= 27; j++) {
-                disponibilidadHorarios[j] = false;
+    
+              // Verificar el paquete horario nocturno (intervalos 20 al 27, es decir, 18:00 a 22:00)
+              for (var i = 20; i <= 27; i++) {
+                if (!disponibilidadHorarios[i]) {
+                  for (var j = 20; j <= 27; j++) {
+                    disponibilidadHorarios[j] = false;
+                  }
+                  disponibilidadNocturno = false;
+                  break;
+                }
               }
-              disponibilidadNocturno = false;
-              break; // Al menos un intervalo está ocupado, salir del ciclo
-            }
-          }
-
-          // Calcula los índices de inicio y fin de los intervalos para la nueva hora y duración
-          var inicioNuevoIntervalo = Math.floor((nuevaHora - 480) / 30);
-          var finNuevoIntervalo = inicioNuevoIntervalo + nuevaDuracion / 30;
-
-          // Verifica si alguno de los nuevos intervalos está ocupado
-          var algunIntervaloOcupado = false;
-          for (var i = inicioNuevoIntervalo; i < finNuevoIntervalo; i++) {
-            console.log("esta es la disponibilidad del intervalo " + i + ": " + disponibilidadHorarios[i]);
-            if (!disponibilidadHorarios[i]) {
-              console.log("está ocupado el intervalo " + i);
-              algunIntervaloOcupado = true;
-              break; // Si uno está ocupado, no es necesario verificar los demás
-            }
-          }
-
-          if (algunIntervaloOcupado) {
-            // Al menos uno de los intervalos no está disponible
-            // Actualizar la fecha del evento de vuelta a la fecha que tenía porque ahora mismo está en 31 de diciembre.
-            var fechaEventoReservaBackup = guardarBackupFechaEventoReserva();
-            console.log('fecha evento reserva backup' + fechaEventoReservaBackup);
-            eventoRef.update({fechaEvento: fechaEventoReservaBackup});
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar TODO EL DÍA ocupado
-            if (!disponibilidadMatutino && !disponibilidadVesperino && !disponibilidadNocturno) {
+    
+              // Calcula los índices de inicio y fin de los intervalos para la nueva hora y duración
+              var inicioNuevoIntervalo = Math.floor((nuevaHora - 480) / 30);
+              var finNuevoIntervalo = inicioNuevoIntervalo + Math.floor(nuevaDuracion / 30);
+    
+              // Asegurar límites válidos
+              inicioNuevoIntervalo = Math.max(0, inicioNuevoIntervalo);
+              finNuevoIntervalo = Math.min(28, finNuevoIntervalo);
+    
+              // Verifica si alguno de los nuevos intervalos está ocupado
+              var algunIntervaloOcupado = false;
+              for (var k = inicioNuevoIntervalo; k < finNuevoIntervalo; k++) {
+                console.log("esta es la disponibilidad del intervalo " + k + ": " + disponibilidadHorarios[k]);
+                if (!disponibilidadHorarios[k]) {
+                  console.log("está ocupado el intervalo " + k);
+                  algunIntervaloOcupado = true;
+                  break;
+                }
+              }
+    
+              if (algunIntervaloOcupado) {
+                // Al menos uno de los intervalos no está disponible
+                // Actualizar la fecha del evento de vuelta a la fecha que tenía porque ahora mismo está en 31 de diciembre.
+                var fechaEventoReservaBackup = guardarBackupFechaEventoReserva();
+                console.log('fecha evento reserva backup' + fechaEventoReservaBackup);
+                eventoRef.update({ fechaEvento: fechaEventoReservaBackup });
+    
+                // Mostrar alerta al usuario con SweetAlert2 en caso de estar TODO EL DÍA ocupado
+                if (!disponibilidadMatutino && !disponibilidadVesperino && !disponibilidadNocturno) {
+                  Swal.fire({
+                    title: '¡SIN DISPONIBILIDAD EN TODO EL DÍA! 📅',
+                    text: 'Ya no es posible reservar en ningún espacio del día debido a que los 3 horarios para este día están ocupados. Prueba a consultar la disponibilidad en la sección azul y escoger otro día.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    allowOutsideClick: true,
+                    backdrop: true,
+                    allowEscapeKey: true,
+                    imageUrl: 'https://i.ibb.co/LPTDqcy/AVATAR-NODISPOTODODIA-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                  });
+                  resolve(false);
+                  return;
+                }
+    
+                // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario matutino.
+                if (!disponibilidadMatutino && inicioNuevoIntervalo <= 9) {
+                  Swal.fire({
+                    title: '¡SIN DISPONIBILIDAD EN EL HORARIO MATUTINO! 🌤️',
+                    text: 'El horario matutino ya está ocupado (8:00 a 13:00). Prueba cambiar el día, hora o duración.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    allowOutsideClick: true,
+                    backdrop: true,
+                    allowEscapeKey: true,
+                    imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                  });
+                  resolve(false);
+                  return;
+                }
+    
+                // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario vespertino.
+                if (!disponibilidadVesperino && inicioNuevoIntervalo <= 19) {
+                  Swal.fire({
+                    title: '¡SIN DISPONIBILIDAD EN EL HORARIO VESPERTINO! ☀️',
+                    text: 'El horario vespertino ya está ocupado (13:00 a 18:00). Prueba cambiar el día, hora o duración.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    allowOutsideClick: true,
+                    backdrop: true,
+                    allowEscapeKey: true,
+                    imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                  });
+                  resolve(false);
+                  return;
+                }
+    
+                // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario nocturno.
+                if (!disponibilidadNocturno) {
+                  Swal.fire({
+                    title: '¡SIN DISPONIBILIDAD EN EL HORARIO NOCTURNO! 🌕',
+                    text: 'El horario nocturno ya está ocupado (18:00 a 22:00). Prueba cambiar el día, hora o duración.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    allowOutsideClick: true,
+                    backdrop: true,
+                    allowEscapeKey: true,
+                    imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                  });
+                  resolve(false);
+                  return;
+                }
+    
+              } else {
+                // Todos los intervalos están disponibles
+                // Realiza la edición de la reserva (el caller puede seguir con la actualización)
+                resolve(true); // Resolver la promesa con 'true' si todos los intervalos están disponibles
+                return;
+              }
+            }).catch(function (error) {
               Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN TODO EL DÍA! 📅',
-              text: 'Ya no es posible reservar en ningún espacio del día debido a que los 3 horarios para este día están ocupados. Prueba a consultar la disponibilidad en la sección azul y escoger otro día.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/LPTDqcy/AVATAR-NODISPOTODODIA-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+                title: '¡ERROR DE CONSULTA!',
+                text: 'Ocurrió un error al obtener las reservas. Por favor, inténtalo de nuevo más tarde o comunícate con el creador de la plataforma.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                allowOutsideClick: true,
+                backdrop: true,
+                allowEscapeKey: true,
+                imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+              });
+              console.log(error);
+              resolve(false);
+              return;
             });
-            return; // Detener la ejecución de la función
-            }
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario matutino.
-            if (!disponibilidadMatutino && inicioNuevoIntervalo <= 9) {
-              Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN EL HORARIO MATUTINO! 🌤️',
-              text: 'El horario matutino ya está ocupado (8:00 a 13:00). Prueba cambiar el día, hora o duración.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la ejecución de la función
-            }
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario vespertino.
-            if (!disponibilidadVesperino && inicioNuevoIntervalo <= 19) {
-              Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN EL HORARIO VESPERTINO! ☀️',
-              text: 'El horario vespertino ya está ocupado (13:00 a 18:00). Prueba cambiar el día, hora o duración.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la ejecución de la función
-            }
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario nocturno.
-            if (!disponibilidadNocturno) {
-              Swal.fire({
-              title: '¡SIN DISPONIBILIDAD EN EL HORARIO NOCTURNO! 🌕',
-              text: 'El horario nocturno ya está ocupado (18:00 a 22:00). Prueba cambiar el día, hora o duración.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              allowOutsideClick: true,
-              backdrop: true,  
-              allowEscapeKey: true,
-              imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la ejecución de la función
-            }
-          } else {
-            // Todos los intervalos están disponibles
-            // Realiza la edición de la reserva
-            // ...
-            resolve(true); // Resolver la promesa con 'true' si todos los intervalos están disponibles
-          }
-        }).catch(function(error) {
-          Swal.fire({
-            title: '¡ERROR DE CONSULTA!',
-            text: 'Ocurrió un error al obtener las reservas. Por favor, inténtalo de nuevo más tarde o comunícate con el creador de la plataforma.',
-            icon: 'error',
-            confirmButtonText: 'Aceptar',
-            allowOutsideClick: true,
-            backdrop: true,  
-            allowEscapeKey: true,
-            imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+    
+          })
+          .catch(error => {
+            console.error("Error al actualizar el evento:", error);
+            resolve(false);
           });
-          console.log(error);
-          resolve(false); // Resolver la promesa con 'false' en caso de error
-          return;
-        });
-        
-      })
-      .catch(error => console.error("Error al actualizar el evento:", error));
-
+    
+      });
     }
-  )}
+    
 
     function verificarDisponibilidadRegistro() {
         return new Promise((resolve, reject) => {
@@ -5831,135 +6003,169 @@
     }
 
     function EjecutarAdmin(event) {
-        console.log("Función EjecutarAdmin iniciada.");
+      console.log("Función EjecutarAdmin iniciada.");
 
-        // Verifica si el usuario es administrador mediante correoUsuario
-        if (correoUsuario !== "siea@aneiap.co" && correoUsuario !== "academico@aneiap.co") {
-            console.log("Usuario no autorizado. Mostrando mensaje de advertencia.");
-            Swal.fire({
-                title: "¿LA CURIOSIDAD MATÓ AL GATO?",
-                text: "Solo el administrador puede acceder a esta función SECRETA de SIEA. ¿Quieres saber qué es? Sacia tu curiosidad escribiéndole al admin. 👀",
-                icon: "warning",
-                confirmButtonText: "Aceptar",
-                allowOutsideClick: true,
-                backdrop: true,
-                allowEscapeKey: true,
-                imageWidth: 120,
-                imageHeight: 235,
-            });
-            console.log("Fin de la función por falta de permisos.");
-            return;
+      // Verifica si el usuario es administrador mediante correoUsuario
+      if (correoUsuario !== "siea@aneiap.co" && correoUsuario !== "academico@aneiap.co") {
+        console.log("Usuario no autorizado. Mostrando mensaje de advertencia.");
+        Swal.fire({
+          title: "¿LA CURIOSIDAD MATÓ AL GATO?",
+          text: "Solo el administrador puede acceder a esta función SECRETA de SIEA. ¿Quieres saber qué es? Sacia tu curiosidad escribiéndole al admin. 👀",
+          icon: "warning",
+          confirmButtonText: "Aceptar",
+          allowOutsideClick: true,
+          backdrop: true,
+          allowEscapeKey: true,
+          imageWidth: 120,
+          imageHeight: 235,
+        });
+        console.log("Fin de la función por falta de permisos.");
+        return;
+      }
+
+      console.log("Usuario autorizado. Continuando con la obtención de documentos.");
+
+      // Mostrar el menú para seleccionar "Editar reserva" o "Editar metas o fechas"
+      Swal.fire({
+        title: "Selecciona lo que deseas actualizar",
+        input: 'select',
+        inputOptions: {
+          'editarReserva': 'Editar Reserva',
+          'editarMetasFechas': 'Editar Metas o Fechas',
+        },
+        inputPlaceholder: '¿Qué deseas hacer?',
+        showCancelButton: true,
+        confirmButtonText: 'Continuar',
+        cancelButtonText: 'Cancelar',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        const opcionSeleccionada = result.value;
+
+        if (opcionSeleccionada === 'editarReserva') {
+          console.log("Opción seleccionada: Editar Reserva");
+          actualizarDocumentoReserva();
+          return;
         }
 
-        console.log("Usuario autorizado. Continuando con la obtención de documentos.");
+        if (opcionSeleccionada === 'editarMetasFechas') {
+          console.log("Opción seleccionada: Editar Metas o Fechas");
 
-        // Mostrar el menú para seleccionar "Editar reserva" o "Editar metas"
-        Swal.fire({
-            title: "Selecciona lo que deseas actualizar",
-            input: 'select',
-            inputOptions: {
-                'editarReserva': 'Editar Reserva',
-                'editarMetas': 'Editar Metas',
-            },
-            inputPlaceholder: '¿Qué deseas hacer?',
-            showCancelButton: true,
-            confirmButtonText: 'Continuar',
-            cancelButtonText: 'Cancelar',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-        }).then((result) => {
-            if (!result.isConfirmed) {
-                return; // Si se cancela, no hacer nada
-            }
+          const metasRef = firebase.firestore().collection("metas");
 
-            const opcionSeleccionada = result.value;
-            
-            if (opcionSeleccionada === 'editarReserva') {
-                // Si elige "Editar Reserva", mostrar el swal.fire original
-                console.log("Opción seleccionada: Editar Reserva");
-                actualizarDocumentoReserva();
-            } else if (opcionSeleccionada === 'editarMetas') {
-                // Si elige "Editar Metas", mostrar un nuevo swal.fire para seleccionar el documento de metas
-                console.log("Opción seleccionada: Editar Metas");
+          metasRef.get().then((snapshot) => {
+            const opcionesMetas = snapshot.docs.map(doc => doc.id);
 
-                // Mostrar el swal para seleccionar un documento de metas
-                const metasRef = firebase.firestore().collection("metas");
+            return Swal.fire({
+              title: 'Selecciona el documento de metas',
+              input: 'select',
+              inputOptions: opcionesMetas.reduce((acc, metaDoc) => {
+                acc[metaDoc] = metaDoc;
+                return acc;
+              }, {}),
+              inputPlaceholder: 'Selecciona el periodo al que le editarás',
+              showCancelButton: true,
+              confirmButtonText: 'Continuar',
+              cancelButtonText: 'Cancelar',
+              allowOutsideClick: false,
+              allowEscapeKey: false,
+            });
+          }).then((metaResult) => {
+            if (!metaResult || !metaResult.isConfirmed || !metaResult.value) return;
 
-                metasRef.get().then((snapshot) => {
-                    const opcionesMetas = snapshot.docs.map(doc => doc.id);
-                    Swal.fire({
-                        title: 'Selecciona el documento de metas',
-                        input: 'select',
-                        inputOptions: opcionesMetas.reduce((acc, metaDoc) => {
-                            acc[metaDoc] = metaDoc;
-                            return acc;
-                        }, {}),
-                        inputPlaceholder: 'Selecciona el periodo al que le editarás las metas',
-                        showCancelButton: true,
-                        confirmButtonText: 'Continuar',
-                        cancelButtonText: 'Cancelar',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                    }).then((metaResult) => {
-                        if (!metaResult.isConfirmed || !metaResult.value) {
-                            return; // Si no hay valor seleccionado o se cancela, no hacer nada
-                        }
+            const docMetaSeleccionado = metaResult.value;
+            console.log("Documento de metas seleccionado:", docMetaSeleccionado);
 
-                        const docMetaSeleccionado = metaResult.value;
-                        console.log("Documento de metas seleccionado:", docMetaSeleccionado);
+            return firebase.firestore().collection("metas").doc(docMetaSeleccionado).get()
+              .then((docMeta) => {
+                if (!docMeta.exists) {
+                  Swal.fire('Error', 'No se pudo obtener el documento de metas.', 'error');
+                  return;
+                }
+                const dataMeta = docMeta.data() || {};
 
-                        // Obtener los datos actuales del documento de metas seleccionado
-                        metasRef.doc(docMetaSeleccionado).get().then((docMeta) => {
-                            const dataMeta = docMeta.data();
-                            // Mostrar el swal para editar los valores de metaVA, metaEI, metaIE
-                            Swal.fire({
-                                title: `Editar metas para ${docMetaSeleccionado}`,
-                                html: ` 
-                                    <label for="metaVA">Meta VA</label>
-                                    <input type="number" id="metaVA" class="swal2-input" value="${dataMeta.metaVA}">
-                                    
-                                    <label for="metaEI">Meta EI</label>
-                                    <input type="number" id="metaEI" class="swal2-input" value="${dataMeta.metaEI}">
-                                    
-                                    <label for="metaIE">Meta IE</label>
-                                    <input type="number" id="metaIE" class="swal2-input" value="${dataMeta.metaIE}">
-                                `,
-                                confirmButtonText: 'Actualizar',
-                                showCancelButton: true,
-                                cancelButtonText: 'Cancelar',
-                                preConfirm: () => {
-                                    // Obtener los valores editados
-                                    const nuevaMetaVA = document.getElementById('metaVA').value;
-                                    const nuevaMetaEI = document.getElementById('metaEI').value;
-                                    const nuevaMetaIE = document.getElementById('metaIE').value;
+                // Editor de 5 campos (metas + fechas como string yyyy-mm-dd)
+                return Swal.fire({
+                  title: `Editar metas/fechas para ${docMetaSeleccionado}`,
+                  html: `
+                    <label for="metaVA">Meta VA</label>
+                    <input type="number" id="metaVA" class="swal2-input" value="${dataMeta.metaVA ?? ''}" inputmode="numeric">
 
-                                    // Validar que no estén vacíos
-                                    if (!nuevaMetaVA || !nuevaMetaEI || !nuevaMetaIE) {
-                                        Swal.showValidationMessage('Todos los campos son obligatorios.');
-                                        return false;
-                                    }
+                    <label for="metaEI">Meta EI</label>
+                    <input type="number" id="metaEI" class="swal2-input" value="${dataMeta.metaEI ?? ''}" inputmode="numeric">
 
-                                    // Actualizar los valores en Firestore
-                                    return metasRef.doc(docMetaSeleccionado).update({
-                                        metaVA: nuevaMetaVA,
-                                        metaEI: nuevaMetaEI,
-                                        metaIE: nuevaMetaIE
-                                    }).then(() => {
-                                        Swal.fire('Actualizado', 'Las metas se han actualizado correctamente.', 'success');
-                                    }).catch((error) => {
-                                        Swal.fire('Error', 'No se pudieron actualizar las metas.', 'error');
-                                    });
-                                }
-                            });
-                        }).catch((error) => {
-                            Swal.fire('Error', 'No se pudo obtener el documento de metas.', 'error');
-                        });
+                    <label for="metaIE">Meta IE</label>
+                    <input type="number" id="metaIE" class="swal2-input" value="${dataMeta.metaIE ?? ''}" inputmode="numeric">
+
+                    <label for="fechaInicioSemestre">Fecha inicio semestre (YYYY-MM-DD)</label>
+                    <input type="date" id="fechaInicioSemestre" class="swal2-input" value="${(dataMeta.fechaInicioSemestre ?? '')}">
+
+                    <label for="fechaFinSemestre">Fecha fin semestre (YYYY-MM-DD)</label>
+                    <input type="date" id="fechaFinSemestre" class="swal2-input" value="${(dataMeta.fechaFinSemestre ?? '')}">
+                  `,
+                  confirmButtonText: 'Actualizar',
+                  showCancelButton: true,
+                  cancelButtonText: 'Cancelar',
+                  allowOutsideClick: false,
+                  allowEscapeKey: false,
+                  preConfirm: () => {
+                    const getVal = (id) => (document.getElementById(id).value || "").toString().trim();
+
+                    const nuevaMetaVA = Number(getVal('metaVA')); // convertir a number
+                    const nuevaMetaEI = Number(getVal('metaEI')); // convertir a number
+                    const nuevaMetaIE = Number(getVal('metaIE')); // convertir a number
+
+                    const nuevaFechaInicio = getVal('fechaInicioSemestre');
+                    const nuevaFechaFin    = getVal('fechaFinSemestre');
+
+                    // Validaciones básicas
+                    if (!nuevaMetaVA || !nuevaMetaEI || !nuevaMetaIE || !nuevaFechaInicio || !nuevaFechaFin) {
+                      Swal.showValidationMessage('Todos los campos son obligatorios.');
+                      return false;
+                    }
+
+                    const isoRegex = /^\d{4}-\d{2}-\d{2}$/;
+                    if (!isoRegex.test(nuevaFechaInicio) || !isoRegex.test(nuevaFechaFin)) {
+                      Swal.showValidationMessage('Las fechas deben tener formato YYYY-MM-DD.');
+                      return false;
+                    }
+
+                    // Validar que sean fechas válidas del calendario
+                    const isValidISODate = (s) => {
+                      const [y, m, d] = s.split('-').map(Number);
+                      const dt = new Date(Date.UTC(y, m - 1, d));
+                      // Comprobar que conserva año/mes/día
+                      return dt.getUTCFullYear() === y && (dt.getUTCMonth() + 1) === m && dt.getUTCDate() === d;
+                    };
+                    if (!isValidISODate(nuevaFechaInicio) || !isValidISODate(nuevaFechaFin)) {
+                      Swal.showValidationMessage('Alguna de las fechas no es válida en el calendario.');
+                      return false;
+                    }
+
+                    // Actualizar como STRING en Firestore (metas y fechas)
+                    return firebase.firestore().collection("metas").doc(docMetaSeleccionado).update({
+                      metaVA: nuevaMetaVA,
+                      metaEI: nuevaMetaEI,
+                      metaIE: nuevaMetaIE,
+                      fechaInicioSemestre: nuevaFechaInicio, // string YYYY-MM-DD
+                      fechaFinSemestre:    nuevaFechaFin     // string YYYY-MM-DD
+                    }).then(() => {
+                      Swal.fire('Actualizado', 'Los datos se han actualizado correctamente.', 'success');
+                    }).catch((error) => {
+                      Swal.fire('Error', 'No se pudieron actualizar los datos.', 'error');
                     });
-                }).catch((error) => {
-                    Swal.fire('Error', 'No se pudo cargar los documentos de metas.', 'error');
+                  }
                 });
-            }
-        });
+              }).catch((error) => {
+                Swal.fire('Error', 'No se pudo obtener el documento de metas.', 'error');
+              });
+          }).catch((error) => {
+            Swal.fire('Error', 'No se pudo cargar los documentos de metas.', 'error');
+          });
+        }
+      });
     }
 
     function actualizarDocumentoReserva() {
@@ -6137,6 +6343,8 @@
                 inputOptions: {
                   'uniguajira': 'UNIGUAJIRA',
                   'unimagdalena': 'UNIMAGDALENA',
+                  'usasm': 'USASM',
+                  'unicaribe': 'UNICARIBE',
                   'uniatlantico': 'UNIATLÁNTICO',
                   'uninorte': 'UNINORTE',
                   'unisimon': 'UNISIMÓN',
@@ -6145,7 +6353,6 @@
                   'utb': 'UTB',
                   'upbmonteria': 'UPBMONTERÍA',
                   'unicordoba': 'UNICÓRDOBA',
-                  'areandina': 'AREANDINA',
                   'ufps': 'UFPS',
                   'unalmed': 'UNALMED',
                   'udea': 'UDEA',
@@ -6156,8 +6363,8 @@
                   'unalbog': 'UNALBOG',
                   'univalle': 'UNIVALLE',
                   'icesi': 'ICESI',
+                  'uao': 'UAO',
                   'usc': 'USC',
-                  'librecali': 'LIBRECALI',
                   'nacional': 'NACIONAL',
                 },
                 inputPlaceholder: 'Selecciona un capítulo',
@@ -6173,6 +6380,14 @@
                   // Mostrar mensaje de inicio de sesión exitoso
                   mostrarMensajeInicioSesion();
                   console.log("El capítulo del usuario es: " + capituloUsuario);
+
+                  // Mostrar botones para generar informes
+                  document.getElementById("btnInformeFI").style.display = "inline-block";
+                  document.getElementById("btnInformeIE").style.display = "inline-block";
+                  document.getElementById("btnDirectorio").style.display = "inline-block";
+                  
+                  var storedTelefonoCuenta = doc.data().telefonoDCA;
+                  telefonoCuenta = storedTelefonoCuenta;
                 }
               });
             } else if (correo.startsWith("academico_") || correo === "informes@aneiap.co") {
@@ -6185,11 +6400,13 @@
                 // Mostrar botones para generar informes
                 document.getElementById("btnInformeFI").style.display = "inline-block";
                 document.getElementById("btnInformeIE").style.display = "inline-block";
+                document.getElementById("btnDirectorio").style.display = "inline-block";
               } else {
                 // Si el correo no empieza por "academico_", asignar "nacional"
                 capituloUsuario = "nacional";
                 document.getElementById("btnInformeFI").style.display = "inline-block";
                 document.getElementById("btnInformeIE").style.display = "inline-block";
+                document.getElementById("btnDirectorio").style.display = "inline-block";
               }
               var storedTelefonoCuenta = doc.data().telefonoDCA;
               telefonoCuenta = storedTelefonoCuenta;
@@ -6198,24 +6415,73 @@
               // Vaciar los campos de correo y contraseña
               document.getElementById("correo").value = "";
               document.getElementById("contrasena").value = "";
-            } else if (correo.startsWith("mercadeo_") || correo === "mercadeo@aneiap.co") {
-              if (correo.startsWith("mercadeo_")) {
-                // Si el correo empieza por "academico_", extraer el nombre del capítulo y asignarlo a capituloUsuario
-                var inicio = "mercadeo_";
-                var fin = "@aneiap.co";
-                var capitulo = correo.substring(inicio.length, correo.indexOf(fin));
-                capituloUsuario = capitulo;
-              } else {
-                // Si el correo no empieza por "academico_", asignar "nacional"
-                capituloUsuario = "nacional";
-              }
-              // Mostrar mensaje de inicio de sesión exitoso
-              mostrarMensajeInicioSesion();
-              // Vaciar los campos de correo y contraseña
-              document.getElementById("correo").value = "";
-              document.getElementById("contrasena").value = "";
-              desplegarInterfazCRM();
-              return;
+              } else if (correo.startsWith("mercadeo_") || correo === "mercadeo@aneiap.co") {
+                if (correo.startsWith("mercadeo_")) {
+                  // Si el correo empieza por "mercadeo_", extraer el nombre del capítulo y asignarlo a capituloUsuario
+                  var inicio = "mercadeo_";
+                  var fin = "@aneiap.co";
+                  var capitulo = correo.substring(inicio.length, correo.indexOf(fin));
+                  capituloUsuario = capitulo;
+              
+                  // Mostrar mensaje de inicio de sesión exitoso
+                  mostrarMensajeInicioSesion();
+                  console.log("El capítulo del usuario es: " + capituloUsuario);
+                  // Vaciar los campos de correo y contraseña
+                  document.getElementById("correo").value = "";
+                  document.getElementById("contrasena").value = "";
+                  desplegarInterfazCRM();
+                  return;
+              
+                } else {
+                  // Si el correo es "mercadeo@aneiap.co", mostrar selección de capítulo
+                  Swal.fire({
+                    title: 'Selecciona el capítulo sobre el cual deseas consultar información:',
+                    input: 'select',
+                    inputOptions: {
+                      'uniguajira': 'UNIGUAJIRA',
+                      'unimagdalena': 'UNIMAGDALENA',
+                      'usasm': 'USASM',
+                      'unicaribe': 'UNICARIBE',
+                      'uniatlantico': 'UNIATLÁNTICO',
+                      'uninorte': 'UNINORTE',
+                      'unisimon': 'UNISIMÓN',
+                      'cuc': 'CUC',
+                      'librequilla': 'LIBREQUILLA',
+                      'utb': 'UTB',
+                      'upbmonteria': 'UPBMONTERÍA',
+                      'unicordoba': 'UNICÓRDOBA',
+                      'ufps': 'UFPS',
+                      'unalmed': 'UNALMED',
+                      'udea': 'UDEA',
+                      'upbmed': 'UPBMED',
+                      'utp': 'UTP',
+                      'unalma': 'UNALMA',
+                      'udistrital': 'UDISTRITAL',
+                      'unalbog': 'UNALBOG',
+                      'univalle': 'UNIVALLE',
+                      'icesi': 'ICESI',
+                      'uao': 'UAO',
+                      'usc': 'USC',
+                      'nacional': 'NACIONAL',
+                    },
+                    inputPlaceholder: 'Selecciona un capítulo',
+                    confirmButtonText: 'Aceptar',
+                    showCancelButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                  }).then((result) => {
+                    if (result.isConfirmed && result.value !== "") {
+                      capituloUsuario = result.value;
+                      console.log("El capítulo del usuario es: " + capituloUsuario);
+                      mostrarMensajeInicioSesion();
+                      document.getElementById("correo").value = "";
+                      document.getElementById("contrasena").value = "";
+                      // Ejecutar interfaz CRM después de elegir el capítulo
+                      desplegarInterfazCRM();
+                    }
+                  });
+                  return;
+                }
             } else {
               // Si no se cumple ninguna de las condiciones anteriores, asignar valor "general" a capituloUsuario
               capituloUsuario = "nacional";
@@ -7014,11 +7280,11 @@
 
                         // Opciones de capítulos
                         const opcionesCapitulos = [
-                            "uniguajira", "unimagdalena", "uniatlantico", "uninorte", "unisimon", 
+                            "uniguajira", "unimagdalena", "usasm", "unicaribe", "uniatlantico", "uninorte", "unisimon", 
                             "cuc", "librequilla", "utb", "upbmonteria", "unicordoba", 
-                            "areandina", "ufps", "unalmed", "udea", "upbmed", 
+                            "ufps", "unalmed", "udea", "upbmed", 
                             "utp", "unalma", "udistrital", "unalbog", "univalle", 
-                            "icesi", "usc", "librecali"
+                            "icesi", "uao", "usc"
                         ];
                         
                         // Crear la estructura HTML para los desplegables y textos adicionales
@@ -7577,40 +7843,108 @@
         }
     }
 
-    // Función para consultar las evaluaciones del evento seleccionado
     function consultarEvaluaciones() {
-    // Obtener el nombre del evento seleccionado
-    var nombreEvento = document.getElementById("nombre-espacio-consultar-evaluaciones").value;
-    // Obtener las fechas seleccionadas
-    var fechaInicial = document.getElementById("fecha-inicial-evaluaciones").value;
-    var fechaFinal = document.getElementById("fecha-final-evaluaciones").value;
+        var nombreEvento = document.getElementById("nombre-espacio-consultar-evaluaciones").value;
+        var fechaInicial = document.getElementById("fecha-inicial-evaluaciones").value;
+        var fechaFinal = document.getElementById("fecha-final-evaluaciones").value;
 
-    // Realizar la consulta a Firebase para obtener las evaluaciones del evento seleccionado
-    var reservasRef = firebase.firestore().collection("reservas");
-    var consultaEvaluaciones = reservasRef.where("nombreEvento", "==", nombreEvento)
-        .where("fechaEvento", ">=", fechaInicial)
-        .where("fechaEvento", "<=", fechaFinal)
-        .where("capitulosOrganizadores", "array-contains", capituloUsuario);
+        var reservasRef = firebase.firestore().collection("reservas");
+        var consultaEvaluaciones = reservasRef.where("nombreEvento", "==", nombreEvento)
+            .where("fechaEvento", ">=", fechaInicial)
+            .where("fechaEvento", "<=", fechaFinal)
+            .where("capitulosOrganizadores", "array-contains", capituloUsuario);
 
-    consultaEvaluaciones.get().then(function(querySnapshot) {
-        var tablaBody = document.getElementById("tabla-evaluaciones").getElementsByTagName("tbody")[0];
-        tablaBody.innerHTML = ""; // Limpiar el contenido actual de la tabla
+        consultaEvaluaciones.get().then(function(querySnapshot) {
+            var tablaBody = document.getElementById("tabla-evaluaciones").getElementsByTagName("tbody")[0];
+            tablaBody.innerHTML = "";
 
-        if (querySnapshot.empty) {
-            // Si no hay datos, mostrar mensaje en lugar de la tabla
-            var mensaje = document.createElement("tr");
-            var mensajeCell = document.createElement("td");
-            mensajeCell.setAttribute("colspan", "7"); // Colspan para ocupar todas las columnas
-            mensajeCell.textContent = "No hay respuestas en la evaluación de satisfacción en este momento para el evento.";
-            mensaje.appendChild(mensajeCell);
-            tablaBody.appendChild(mensaje);
-            var estadoTabla = document.getElementById("estadoTablaEvaluaciones");
-            estadoTabla.style.display = "none"; // Oculta el mensaje de estado
-        } else {
-            // Si hay datos, construir la tabla
+            if (querySnapshot.empty) {
+                var mensaje = document.createElement("tr");
+                var mensajeCell = document.createElement("td");
+                mensajeCell.setAttribute("colspan", "7");
+                mensajeCell.textContent = "No hay respuestas en la evaluación de satisfacción en este momento para el evento.";
+                mensaje.appendChild(mensajeCell);
+                tablaBody.appendChild(mensaje);
+                document.getElementById("estadoTablaEvaluaciones").style.display = "none";
+                return;
+            }
+
+            // -----------------------------
+            // VARIABLES PARA EL RESUMEN
+            // -----------------------------
+            var totalRespuestas = 0;
+            var detractores = 0;
+            var pasivos = 0;
+            var promotores = 0;
+            var totalAsistentesFirebase = 0;
+            var porcentajeSatisfaccionFirebase = 0;
+
             querySnapshot.forEach(function(doc) {
                 var data = doc.data();
-                // Dividir las respuestas que están separadas por "|"
+
+                // Guardar valores de Firebase (solo una vez)
+                if (totalAsistentesFirebase === 0 && data.totalAsistentes) {
+                    console.log("Activando Total Asistentes")
+                    totalAsistentesFirebase = data.totalAsistentes;
+                    console.log(totalAsistentesFirebase);
+                }
+                if (porcentajeSatisfaccionFirebase === 0 && data.satisfaccion) {
+                    porcentajeSatisfaccionFirebase = data.satisfaccion;
+                }
+
+                var respuestas1 = data.respuestas1.split("|");
+
+                // Contabilizar respuestas NPS
+                for (var i = 0; i < respuestas1.length - 1; i++) {
+                    var score = parseInt(respuestas1[i]);
+                    if (!isNaN(score)) {
+                        totalRespuestas++;
+                        if (score >= 0 && score <= 6) detractores++;
+                        else if (score == 7 || score == 8) pasivos++;
+                        else if (score == 9 || score == 10) promotores++;
+                    }
+                }
+                console.log("Total respuestas:" + totalRespuestas)
+            });
+
+            // Cálculos finales
+            var porcentajeRespuestas = (totalRespuestas > 0 && totalAsistentesFirebase > 0)
+                ? ((totalRespuestas*100 / totalAsistentesFirebase)).toFixed(2) + "%"
+                : "0.00%";
+
+            var porcentajeSatisfaccion = porcentajeSatisfaccionFirebase 
+                ? porcentajeSatisfaccionFirebase + "%" 
+                : "0.00%";
+
+            // -----------------------------
+            // AGREGAR FILA DE RESUMEN
+            // -----------------------------
+            var filaResumen = tablaBody.insertRow();
+            filaResumen.style.background = "#13315c";
+            filaResumen.style.color = "white";
+            filaResumen.style.fontWeight = "bold";
+
+            var celda = filaResumen.insertCell(0);
+            celda.colSpan = 7;
+            celda.innerHTML =
+                "📊 <b>RESUMEN DE SATISFACCIÓN</b><br>" +
+                "Total respuestas: " + totalRespuestas +
+                " — Detractores: " + (totalRespuestas > 0 ? detractores : 0) +
+                " — Pasivos: " + (totalRespuestas > 0 ? pasivos : 0) +
+                " — Promotores: " + (totalRespuestas > 0 ? promotores : 0) +
+                "<br>% respuestas: " + (totalRespuestas > 0 
+                    ? porcentajeRespuestas 
+                    : "0.00%") +
+                " — % satisfacción Firebase: " + (porcentajeSatisfaccionFirebase 
+                    ? (porcentajeSatisfaccionFirebase * 100).toFixed(2) + "%" 
+                    : "N/A");
+
+            // -----------------------------
+            // AHORA AGREGAR LAS RESPUESTAS NORMALES
+            // -----------------------------
+            querySnapshot.forEach(function(doc) {
+                var data = doc.data();
+
                 var asistentes = data.asistentes.split("|");
                 var correosAsistentes = data.correosAsistentes.split("|");
                 var telefonosAsistentes = data.telefonosAsistentes.split("|");
@@ -7619,7 +7953,6 @@
                 var respuestas3 = data.respuestas3.split("|");
                 var comentarios = data.comentarios.split("|");
 
-                // Insertar cada respuesta en una fila de la tabla
                 for (var i = 0; i < asistentes.length - 1; i++) {
                     var fila = tablaBody.insertRow();
                     fila.insertCell(0).textContent = asistentes[i];
@@ -7631,11 +7964,11 @@
                     fila.insertCell(6).textContent = comentarios[i];
                 }
             });
-        }
-    }).catch(function(error) {
-        console.error("Error al consultar las evaluaciones:", error);
-    });
-}
+
+        }).catch(function(error) {
+            console.error("Error al consultar las evaluaciones:", error);
+        });
+    }
 
     // la función que cambia entre la evaluación de espacio y la evaluación de evento
     function alternarEvaluacion() {
@@ -7758,7 +8091,7 @@
 
             const opcionesEventos = eventos.map(evento => `
             <option value="${evento.id}">
-                ${evento.nombrecrmEvento} | ${evento.clavecrmEvento.slice(-3)}
+                ${evento.nombrecrmEvento} | ${evento.clavecrmEvento.slice(0, 4)}
             </option>`
             ).join("");
 
@@ -8047,7 +8380,7 @@
             // Creamos el listado de opciones de eventos
             const opcionesEventos = eventos.map(evento => `
                 <option value="${evento.id}">
-                    ${evento.nombrecrmEvento} | ${evento.clavecrmEvento.slice(-3)}
+                    ${evento.nombrecrmEvento} | ${evento.clavecrmEvento.slice(0, 4)}
                 </option>`
             ).join("");
 
@@ -8091,7 +8424,7 @@
                         });
                     } else {
                         // Mostrar la tabla de respuestas
-                        mostrarTablaRespuestas(respuestas);
+                        mostrarTablaRespuestas(respuestas, evento);
 
                         /*
                         // Agregar el botón de descarga de Excel junto al de "Volver"
@@ -8181,8 +8514,125 @@
             return respuestas;
         };
 
-        // Función para mostrar la tabla de respuestas
-        const mostrarTablaRespuestas = (respuestas) => {
+        const eliminarDuplicados = (eventoData) => {
+            console.log("=== eliminarDuplicados: inicio ===");
+
+            if (!eventoData) {
+                console.log("ERROR: eventoData es falsy (null/undefined). Saliendo.");
+                return {};
+            }
+
+            // Helpers
+            const safeSplit = (s, allowEmpty = false) => {
+                if (s === undefined || s === null) return [];
+                const arr = s.split("|");
+                console.log(`safeSplit -> entrada: "${s}", allowEmpty=${allowEmpty}, salida:`, arr);
+                if (allowEmpty) return arr; // mantiene vacíos internos
+                return arr.filter(x => x !== "");
+            };
+
+            const joinWithPipe = (arr) => {
+                if (!Array.isArray(arr)) return "";
+                return arr.join("|") + (arr.length > 0 ? "|" : "");
+            };
+
+            // 1) Leer y convertir todos los campos
+            console.log("Leyendo campos del documento...");
+            const correos = safeSplit(eventoData.correoscrmAsistentes);
+            const nombres = safeSplit(eventoData.nombrescrmAsistentes);
+            const telefonos = safeSplit(eventoData.telefonoscrmAsistentes, true); // permite vacíos
+            const comentarios = safeSplit(eventoData.comentarioscrm, true);       // permite vacíos
+
+            console.log("Arrays después de split:");
+            console.log("correos:", correos);
+            console.log("nombres:", nombres);
+            console.log("telefonos:", telefonos);
+            console.log("comentarios:", comentarios);
+
+            // 2) Respuestas dinámicas (respuestascrm1..respuestascrm14)
+            const respuestas = {};
+            for (let i = 1; i <= 14; i++) {
+                const key = "respuestascrm" + i;
+                if (eventoData[key] !== undefined) {
+                    respuestas[key] = safeSplit(eventoData[key]);
+                    console.log(`respuestas[${key}] =`, respuestas[key]);
+                } else {
+                    console.log(`respuestas[${key}] no existe`);
+                }
+            }
+
+            // 3) Detectar duplicados en correos
+            const setCorreos = new Set();
+            const indicesValidos = [];
+            const indicesEliminados = [];
+
+            correos.forEach((correo, index) => {
+                const correoLimpio = (correo || "").trim().toLowerCase();
+                if (!setCorreos.has(correoLimpio)) {
+                    setCorreos.add(correoLimpio);
+                    indicesValidos.push(index);
+                    console.log(`Índice ${index} -> "${correo}" agregado como válido.`);
+                } else {
+                    indicesEliminados.push(index);
+                    console.log(`Índice ${index} -> "${correo}" marcado COMO DUPLICADO y será eliminado.`);
+                }
+            });
+
+            console.log("Indices válidos:", indicesValidos);
+            console.log("Indices eliminados:", indicesEliminados);
+
+            // 4) Función para filtrar arrays por índices válidos (manejo especial para vacíos)
+            const filtrarPorIndices = (arr, allowEmpty = false) => {
+                const result = indicesValidos.map(i => {
+                    if (i < arr.length) return arr[i] !== undefined ? arr[i] : (allowEmpty ? "" : null);
+                    console.warn(`AVISO: índice ${i} fuera de rango para arreglo con longitud ${arr.length}.`);
+                    return allowEmpty ? "" : null;
+                }).filter(v => v !== null);
+                console.log(`filtrarPorIndices -> input length: ${arr.length}, allowEmpty=${allowEmpty}, output length: ${result.length}`);
+                return result;
+            };
+
+            // 5) Construir nuevos valores sin duplicados
+            const nuevosDatos = {};
+            nuevosDatos.correoscrmAsistentes = joinWithPipe(filtrarPorIndices(correos));
+            nuevosDatos.nombrescrmAsistentes = joinWithPipe(filtrarPorIndices(nombres));
+            nuevosDatos.telefonoscrmAsistentes = joinWithPipe(filtrarPorIndices(telefonos, true));
+            nuevosDatos.comentarioscrm = joinWithPipe(filtrarPorIndices(comentarios, true));
+
+            console.log("Campos reconstruidos sin duplicados:");
+            console.log("correoscrmAsistentes:", nuevosDatos.correoscrmAsistentes);
+            console.log("nombrescrmAsistentes:", nuevosDatos.nombrescrmAsistentes);
+            console.log("telefonoscrmAsistentes:", nuevosDatos.telefonoscrmAsistentes);
+            console.log("comentarioscrm:", nuevosDatos.comentarioscrm);
+
+            // 6) Respuestas reconstruidas
+            for (let i = 1; i <= 14; i++) {
+                const key = "respuestascrm" + i;
+                if (respuestas[key]) {
+                    const filtradas = filtrarPorIndices(respuestas[key]);
+                    nuevosDatos[key] = joinWithPipe(filtradas);
+                    console.log(`${key} -> original length: ${respuestas[key].length}, nuevo length: ${filtradas.length}`);
+                }
+            }
+
+            // 7) Resumen final
+            console.log("=== Resumen final ===");
+            console.log("Correos originales:", correos.length, "-> finales:", safeSplit(nuevosDatos.correoscrmAsistentes).length);
+            console.log("Nombres originales:", nombres.length, "-> finales:", safeSplit(nuevosDatos.nombrescrmAsistentes).length);
+            console.log("Telefonos originales:", telefonos.length, "-> finales:", safeSplit(nuevosDatos.telefonoscrmAsistentes, true).length);
+            console.log("Comentarios originales:", comentarios.length, "-> finales:", safeSplit(nuevosDatos.comentarioscrm, true).length);
+            Object.keys(respuestas).forEach(k => {
+                const orig = respuestas[k].length;
+                const fin = nuevosDatos[k] ? safeSplit(nuevosDatos[k]).length : 0;
+                console.log(`${k}: original=${orig} -> final=${fin}`);
+            });
+
+            console.log("=== eliminarDuplicados: fin ===");
+            return nuevosDatos;
+        };
+
+        // Función para mostrar la tabla de respuestas y eliminar duplicados
+        const mostrarTablaRespuestas = (respuestas, eventoOriginal) => {
             Swal.fire({
                 title: "Respuestas del Evento",
                 html: `
@@ -8211,26 +8661,80 @@
                         </table>
                     </div>
                 `,
-                width: "95%",  // Usamos el 90% del ancho de la pantalla
-                heightAuto: false, // Esto evita que se estire más de lo necesario
+                width: "95%",
+                heightAuto: false,
+                showDenyButton: true,
                 showCancelButton: true,
-                cancelButtonText: "Volver",
+                showConfirmButton: true,
+
                 confirmButtonText: "Descargar respuestas",
-                cancelButtonColor: "#007bff",
+                denyButtonText: "Eliminar duplicados",
+                cancelButtonText: "Volver",
+
                 confirmButtonColor: "#3085d6",
+                denyButtonColor: "#d33",
+                cancelButtonColor: "#007bff",
+
                 didOpen: () => {
-                    // Asegurarnos de que el modal tiene suficiente espacio para mostrar la tabla correctamente
                     const swalModal = document.querySelector(".swal2-popup");
-                    swalModal.style.width = "100%";  // Forzar el modal a ocupar el 100% del ancho disponible
-                    swalModal.style.maxWidth = "none";  // Eliminar cualquier restricción de maxWidth
-                    swalModal.style.padding = "20px";  // Aseguramos que haya suficiente espacio dentro del modal
+                    swalModal.style.width = "100%";
+                    swalModal.style.maxWidth = "none";
+                    swalModal.style.padding = "20px";
                 },
+
                 preConfirm: () => {
-                    // Llamar a la función para descargar el Excel con las respuestas
-                    descargarExcelRespuestas(respuestas);  // 'respuestas' es el array con los datos que obtuviste anteriormente
+                    descargarExcelRespuestas(respuestas);
                 },
+
+                preDeny: async () => {
+                    descargarExcelRespuestas(respuestas);
+                    Swal.fire({
+                        title: "Eliminando duplicados",
+                        html: "Por favor espera unos segundos..., se descargó una copia de las respuestas por seguridad.",
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        allowEnterKey: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    try {
+                        // Referencia más segura
+                        const eventoRef = firebase.firestore()
+                            .collection("crmeventos")
+                            .doc(eventoOriginal.id);
+
+                        // 1. Limpiar duplicados
+                        const datosLimpios = eliminarDuplicados(eventoOriginal);
+
+                        // 2. Actualizar en Firebase
+                        await eventoRef.update(datosLimpios);
+
+                        // 3. Leer el nuevo estado actualizado
+                        const docRef = await eventoRef.get();
+                        const eventoNuevo = docRef.data();
+
+                        const respuestasActualizadas = obtenerRespuestasDeEvento(eventoNuevo);
+
+                        // 4. Esperar 3 segundos ANTES del swal final
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Duplicados eliminados",
+                            text: "La tabla ha sido actualizada.",
+                            confirmButtonColor: "#3085d6"
+                        }).then(() => {
+                            mostrarTablaRespuestas(respuestasActualizadas, eventoNuevo);
+                        });
+
+                    } catch (error) {
+                        Swal.fire("Error", "Hubo un problema eliminando duplicados: " + error.message, "error");
+                    }
+
+                    return false;
+                },
+
                 willClose: () => {
-                    // Cuando se hace clic en "Volver", ejecutamos la función mostrarInterfazInicial
                     mostrarInterfazInicial();
                 }
             });
@@ -8505,7 +9009,7 @@
           }
       
           const opcionesEventos = eventos.map(evento => `
-              <option value="${evento.id}">${evento.nombrecrmEvento} | ${evento.clavecrmEvento.slice(-3)}</option>`
+              <option value="${evento.id}">${evento.nombrecrmEvento} | ${evento.clavecrmEvento.slice(0, 4)}</option>`
           ).join("");
       
           Swal.fire({
@@ -8679,10 +9183,51 @@
                       var muestraMinima = calcularMuestraMinima(totalAsistentes);
                       var cumplimiento_logrado = parseFloat(calcularCumplimientoMuestra(respuestasObtenidas, muestraMinima));
       
+                      // --- CALCULAR NPS GLOBAL DE LAS 11 PREGUNTAS ---
+
+                      let totalPromotoresGeneral = 0;
+                      let totalPasivosGeneral = 0;
+                      let totalDetractoresGeneral = 0;
+
+                      for (let iGeneral = 1; iGeneral <= 11; iGeneral++) {
+
+                          let cadenaGeneral = datosEvento["respuestascrm" + iGeneral];
+
+                          if (!cadenaGeneral) continue;
+
+                          let valoresGeneral = cadenaGeneral.split("|").filter(vGeneral => vGeneral !== "");
+
+                          valoresGeneral.forEach(vGeneral => {
+                              console.log(datosEvento["respuestascrm" + iGeneral])
+                              let scoreGeneral = parseInt(vGeneral);
+
+                              if (!isNaN(scoreGeneral)) {
+                                  if (scoreGeneral >= 9 && scoreGeneral <= 10) {
+                                      totalPromotoresGeneral++;
+                                  } else if (scoreGeneral >= 7 && scoreGeneral <= 8) {
+                                      totalPasivosGeneral++;
+                                  } else if (scoreGeneral >= 0 && scoreGeneral <= 6) {
+                                      totalDetractoresGeneral++;
+                                  }
+                              }
+                          });
+                      }
+
+                      // Totales generales
+                      let totalRespuestasGeneral = totalPromotoresGeneral + totalPasivosGeneral + totalDetractoresGeneral;
+
+                      // Calcular NPS General
+                      let npsFinalGeneral = 0;
+                      if (totalRespuestasGeneral > 0) {
+                          npsFinalGeneral = ((totalPromotoresGeneral - totalDetractoresGeneral) / totalRespuestasGeneral) * 100;
+                      }
+
+                      npsFinalGeneral = npsFinalGeneral.toFixed(2);
+
                       var confiabilidad = cumplimiento_logrado >= 100
-                          ? "este informe se puede considerar que es de confianza ya que se cumple con la muestra mínima necesaria."
-                          : "este informe puede tener limitaciones en su confiabilidad, ya que la muestra utilizada parece no haber alcanzado la muestra mínima necesaria para garantizar resultados plenamente representativos.";
-      
+                      ? "este informe se puede considerar que es de confianza ya que se cumple con la muestra mínima necesaria. La satisfacción promedio de este evento fue de: " + npsFinalGeneral + "%."
+                      : "este informe puede tener limitaciones en su confiabilidad, ya que la muestra utilizada parece no haber alcanzado la muestra mínima necesaria para garantizar resultados plenamente representativos. La satisfacción promedio de este evento fue de: " + npsFinalGeneral + "%.";
+
                       // 🔹 Título
                       // Ajuste del ancho máximo permitido para el título
                       const maxWidthTitulo = pdf.internal.pageSize.getWidth() - 80; // Margen de 20px a cada lado
@@ -8761,6 +9306,7 @@
                       }
 
                       //Primera grafica/pregunta
+                        pdf.setFont(undefined, 'normal');
                         i = 1;
                         // Calcular datos NPS
                         var fila_i = tablaRespuestas[i - 1].slice().filter(num => num !== 0);
@@ -9069,7 +9615,7 @@
                             conclusion = "SE CONSIDERA QUE " + itemTexto + "ESTÁ EN UN NIVEL CRÍTICO, LO CUAL INDICA QUE ES UN ÁREA DE GRAN PREOCUPACIÓN Y NECESITA UNA REVISIÓN INMEDIATA.";
                         }
         
-                        y += 35;
+                        y += 30;
                         const conclusionText = pdf.splitTextToSize(`AL ESTAR EN ${nps}% ${conclusion}`, 180);
                         pdf.setFontSize(10);
                         pdf.setFont(undefined, 'bold');
@@ -9097,32 +9643,32 @@
 
                       if (conclusion_comentarios?.trim() && conclusion_top_3?.trim()) {
                         conclusionFinal = `Conclusión general y de comentarios del informe:\n\n${conclusion_comentarios}\n\n` +
-                      `Adicionalmente, se han identificado los siguientes tres aspectos con mejor evaluación:\n\n` +
-                      `1. ${top3[0].item} - NPS: ${top3[0].nps}%\n` +
-                      `2. ${top3[1].item} - NPS: ${top3[1].nps}%\n` +
-                      `3. ${top3[2].item} - NPS: ${top3[2].nps}%\n\n` +
-                      `Por otro lado, se han identificado los tres aspectos con menor evaluación:\n\n` +
-                      `1. ${bottom3[2].item} - NPS: ${bottom3[2].nps}%\n` +
-                      `2. ${bottom3[1].item} - NPS: ${bottom3[1].nps}%\n` +
-                      `3. ${bottom3[0].item} - NPS: ${bottom3[0].nps}%` +
-                      `Conclusión TOP 3 y LAST 3:\n\n` +
-                      `${conclusion_top_3}\n\n`; // Se agrega aquí la conclusión específica del TOP 3
+`Adicionalmente, se han identificado los siguientes tres aspectos con mejor evaluación:\n\n` +
+`1. ${top3[0].item} - NPS: ${top3[0].nps}%\n` +
+`2. ${top3[1].item} - NPS: ${top3[1].nps}%\n` +
+`3. ${top3[2].item} - NPS: ${top3[2].nps}%\n\n` +
+`Por otro lado, se han identificado los tres aspectos con menor evaluación:\n\n` +
+`1. ${bottom3[2].item} - NPS: ${bottom3[2].nps}%\n` +
+`2. ${bottom3[1].item} - NPS: ${bottom3[1].nps}%\n` +
+`3. ${bottom3[0].item} - NPS: ${bottom3[0].nps}%\n` +
+`Conclusión TOP 3 y LAST 3:\n\n` +
+`${conclusion_top_3}\n\n`; // Se agrega aquí la conclusión específica del TOP 3
                       } else {
                          // **Generar el texto de conclusión**
                        conclusionFinal = `Se han identificado los siguientes tres aspectos con mejor evaluación, los cuales son áreas de fortaleza del evento y se buscará mantener las buenas prácticas que permitieron alcanzar estos puntajes:
                       
-                      1. ${top3[0].item} - NPS: ${top3[0].nps}%
-                      2. ${top3[1].item} - NPS: ${top3[1].nps}%
-                      3. ${top3[2].item} - NPS: ${top3[2].nps}%
+1. ${top3[0].item} - NPS: ${top3[0].nps}%
+2. ${top3[1].item} - NPS: ${top3[1].nps}%
+3. ${top3[2].item} - NPS: ${top3[2].nps}%
                                             
-                      Por otro lado, se han identificado los tres aspectos con menor evaluación. Se analizarán en detalle los factores que influyeron en estos puntajes para mejorar en futuras ediciones:
+Por otro lado, se han identificado los tres aspectos con menor evaluación. Se analizarán en detalle los factores que influyeron en estos puntajes para mejorar en futuras ediciones:
                                             
-                      1. ${bottom3[2].item} - NPS: ${bottom3[2].nps}%
-                      2. ${bottom3[1].item} - NPS: ${bottom3[1].nps}%
-                      3. ${bottom3[0].item} - NPS: ${bottom3[0].nps}%
+1. ${bottom3[2].item} - NPS: ${bottom3[2].nps}%
+2. ${bottom3[1].item} - NPS: ${bottom3[1].nps}%
+3. ${bottom3[0].item} - NPS: ${bottom3[0].nps}%
                                             
-                      Con base en esta información, se tomarán medidas estratégicas para reforzar las áreas destacadas y mejorar aquellos aspectos que han recibido retroalimentación menos positiva.
-                      Este texto es ejemplar de como usted debe escribir la parte analizando los 3 mejores aspectos y los 3 mejores aspectos del evento segun la perspectiva del asistente,su analisis debe ser personal y no el presentado aca.                      `;
+Con base en esta información, se tomarán medidas estratégicas para reforzar las áreas destacadas y mejorar aquellos aspectos que han recibido retroalimentación menos positiva.
+Este texto es ejemplar de como usted debe escribir la parte analizando los 3 mejores aspectos y los 3 mejores aspectos del evento segun la perspectiva del asistente,su analisis debe ser personal y no el presentado aca.                      `;
                       
                       }
                       pdf.setTextColor(0, 0, 0); // Asegurar que el texto sea negro
@@ -9179,7 +9725,26 @@
     pdf.setTextColor(0, 0, 0);
     pdf.setFontSize(12);
 
+                const pageCount = pdf.getNumberOfPages();
+                const yFooter = 291.5;
+                const margin = 5;
 
+                for (let i = 2; i <= pageCount; i++) {
+                  pdf.setPage(i);
+
+                  // estilo
+                  pdf.setFontSize(11);
+                  pdf.setTextColor(255, 255, 255);     // blanco
+                  // si cargaste Century Gothic: pdf.setFont('CenturyGothic','bold');
+                  pdf.setFont(undefined, 'bold');      // negrilla
+
+                  // izquierda
+                  pdf.text('GM-DA-01', margin+5, yFooter);
+
+                  // derecha (10 desde el borde derecho)
+                  const pageW = pdf.internal.pageSize.getWidth();
+                  pdf.text(`Pág. ${i}/${pageCount}`, pageW - margin, yFooter, { align: 'right' });
+                }
     
                       // Reemplazar espacios por "_"
                       let nombreLimpio = nombreEvento.replace(/\s+/g, "_");
@@ -9261,6 +9826,8 @@
     const CAPITULOS = [
         { value: "uniguajira", label: "UNIGUAJIRA" },
         { value: "unimagdalena", label: "UNIMAGDALENA" },
+        { value: "usasm", label: "USASM" },
+        { value: "unicaribe", label: "UNICARIBE" },
         { value: "uniatlantico", label: "UNIATLÁNTICO" },
         { value: "uninorte", label: "UNINORTE" },
         { value: "unisimon", label: "UNISIMÓN" },
@@ -9269,7 +9836,6 @@
         { value: "utb", label: "UTB" },
         { value: "upbmonteria", label: "UPBMONTERÍA" },
         { value: "unicordoba", label: "UNICÓRDOBA" },
-        { value: "areandina", label: "AREANDINA" },
         { value: "ufps", label: "UFPS" },
         { value: "unalmed", label: "UNALMED" },
         { value: "udea", label: "UDEA" },
@@ -9280,12 +9846,12 @@
         { value: "unalbog", label: "UNALBOG" },
         { value: "univalle", label: "UNIVALLE" },
         { value: "icesi", label: "ICESI" },
+        { value: "uao", label: "UAO" },
         { value: "usc", label: "USC" },
-        { value: "librecali", label: "LIBRECALI" },
         { value: "nacional", label: "ANEIAP NACIONAL" }
         ];
 
-    async function generarInformePDF(event) {
+    async function generarInformeFI(event) {
       
       if (capituloUsuario === "" || correoUsuario === "") {
         Swal.fire({
@@ -9465,6 +10031,13 @@
 
       actualizarClavesInforme(capituloUsuario, correoUsuario, fechaInicialPDF, fechaFinalPDF)
 
+      // Crear un nuevo objeto jsPDF
+      var pdf = new jsPDF();
+      var tiempoCarga = 30000;
+      var margenizq = 15; //Margen izquierdo
+      var margender = 180;//Margen derecho
+      var coordenadaY = 35;
+
       // Mostrar SweetAlert de espera personalizado
       Swal.fire({
           title: 'Generando informe',
@@ -9479,12 +10052,6 @@
           }
       });
 
-      // Crear un nuevo objeto jsPDF
-      var pdf = new jsPDF();
-      var tiempoCarga = 30000;
-      var margenizq = 15; //Margen izquierdo
-      var margender = 180;//Margen derecho
-      var coordenadaY = 35;
       // Añadir imagen de fondo a la primera página
       pdf.addImage(imgPortadaFI, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
 
@@ -9945,6 +10512,27 @@
                     nombrePeriodo = "TODOS_LOS_PERIODOS";
                 }
 
+                const pageCount = pdf.getNumberOfPages();
+                const yFooter = 291.5;
+                const margin = 5;
+
+                for (let i = 2; i <= pageCount; i++) {
+                  pdf.setPage(i);
+
+                  // estilo
+                  pdf.setFontSize(11);
+                  pdf.setTextColor(255, 255, 255);     // blanco
+                  // si cargaste Century Gothic: pdf.setFont('CenturyGothic','bold');
+                  pdf.setFont(undefined, 'bold');      // negrilla
+
+                  // izquierda
+                  pdf.text('GA-DA-01', margin+5, yFooter);
+
+                  // derecha (10 desde el borde derecho)
+                  const pageW = pdf.internal.pageSize.getWidth();
+                  pdf.text(`Pág. ${i}/${pageCount}`, pageW - margin, yFooter, { align: 'right' });
+                }
+              
                 // Guardar el archivo con el nombre dinámico
                 pdf.save(`Informe_Seguimiento_Formación_${capituloUsuario.toUpperCase()}_${nombrePeriodo}.pdf`);
 
@@ -10684,6 +11272,27 @@
                     nombrePeriodo = "TODOS_LOS_PERIODOS";
                 }
 
+                const pageCount = pdf.getNumberOfPages();
+                const yFooter = 291.5;
+                const margin = 5;
+
+                for (let i = 2; i <= pageCount; i++) {
+                  pdf.setPage(i);
+
+                  // estilo
+                  pdf.setFontSize(11);
+                  pdf.setTextColor(255, 255, 255);     // blanco
+                  // si cargaste Century Gothic: pdf.setFont('CenturyGothic','bold');
+                  pdf.setFont(undefined, 'bold');      // negrilla
+
+                  // izquierda
+                  pdf.text('GA-DA-02', margin+5, yFooter);
+
+                  // derecha (10 desde el borde derecho)
+                  const pageW = pdf.internal.pageSize.getWidth();
+                  pdf.text(`Pág. ${i}/${pageCount}`, pageW - margin, yFooter, { align: 'right' });
+                }
+              
                 // Guardar el archivo con el nombre dinámico
                 pdf.save(`Informe_Seguimiento_Integración_Entorno_${capituloUsuario.toUpperCase()}_${nombrePeriodo}.pdf`);
 
@@ -10733,7 +11342,7 @@
                 clavesInforme: clavesInforme
             }).then(function() {
                 tablaResumenPDF = tablaResumen;
-                console.log("Tabla resumen guardada exitosamente en la colección 'cuentas'.");
+                console.log("Tabla resumen guardada exitosamente en la colección 'cuentas'. del correo '" + correoUsuario + "'");
                 console.log(tablaResumenPDF);
             }).catch(function(error) {
                 console.error("Error al guardar la tabla resumen:", error);
@@ -10854,7 +11463,7 @@
         pdf.setTextColor(0, 0, 0);
     }
 
-    async function generarAgendaFormativa() {
+    async function generarAgendaFormativaFI() {
         const categorias = [
             { nombre: "Académico", color: "#4CAF50" },
             { nombre: "Comunicaciones", color: "#2196F3" },
@@ -11005,10 +11614,415 @@
         }).then((result) => {
             if (result.isDismissed) {
                 // Volver a la interfaz de selección de categoría
-                generarAgendaFormativa();
+                generarAgendaFormativaFI();
             }
         });
     }
+
+    async function generarAgendaFormativaIE() {
+      // === Catálogo de categorías y colores ===
+      const categoriasIE = [
+        { nombre: "ANEIAP - ONU",               color: "#3F51B5" },
+        { nombre: "Apoyo universitario",        color: "#009688" },
+        { nombre: "Impacto social",             color: "#E91E63" },
+        { nombre: "Mundo laboral",              color: "#9C27B0" },
+        { nombre: "Visita industrial / técnica",color: "#FF9800" },
+        { nombre: "TODAS",                      color: "#607D8B" }
+      ];
+
+      // Mapeo Display -> DocID y DocID -> Display
+      const docMap = {
+        aneiaponu:               "ANEIAP - ONU",
+        apoyouniversitario:      "Apoyo universitario",
+        impactosocial:           "Impacto social",
+        mundolaboral:            "Mundo laboral",
+        visitaindustrialtecnica: "Visita industrial / técnica"
+      };
+      const displayToDoc = Object.fromEntries(
+        Object.entries(docMap).map(([id, display]) => [display, id])
+      );
+
+      // === Selector de categoría (SweetAlert2) ===
+      const { value: seleccion } = await Swal.fire({
+        title: '¿Qué categoría desea consultar en la agenda IE?',
+        html: `
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;text-align:left;">
+            ${categoriasIE.slice(0,5).map((cat, i) => `
+              <label style="color:${cat.color};font-weight:bold;">
+                ${cat.nombre}
+                <input type="radio" id="catIE${i}" name="catIE" value="${cat.nombre}" style="margin-left:10px;">
+              </label>
+            `).join('')}
+            <label style="grid-column:span 2;text-align:center;color:${categoriasIE[5].color};font-weight:bold;">
+              ${categoriasIE[5].nombre}
+              <input type="radio" id="catIE5" name="catIE" value="${categoriasIE[5].nombre}" style="margin-left:10px;">
+            </label>
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: false,
+        confirmButtonText: 'Consultar',
+        width: '700px',
+        preConfirm: () => {
+          const selected = document.querySelector('input[name="catIE"]:checked');
+          return selected ? selected.value : null;
+        }
+      });
+
+      if (!seleccion) return;
+
+      // === Lectura Firestore ===
+      const dbRef = firebase.firestore().collection("agendaformativa");
+      let agendaData = [];
+
+      try {
+        if (seleccion === "TODAS") {
+          // Trae los 5 docs en orden del docMap
+          for (const docId of Object.keys(docMap)) {
+            const snap = await dbRef.doc(docId).get();
+            if (snap.exists) {
+              const data = snap.data() || {};
+              const espacios = Array.isArray(data.espacios_ie) ? data.espacios_ie : [];
+              agendaData.push({
+                categoria: docMap[docId],
+                espacios
+              });
+            }
+          }
+        } else {
+          const docId = displayToDoc[seleccion];
+          if (!docId) throw new Error("Categoría no reconocida.");
+
+          const snap = await dbRef.doc(docId).get();
+          if (!snap.exists) {
+            throw new Error("No se encontraron datos para la categoría seleccionada.");
+          }
+          const data = snap.data() || {};
+          const espacios = Array.isArray(data.espacios_ie) ? data.espacios_ie : [];
+          agendaData.push({
+            categoria: seleccion,
+            espacios
+          });
+        }
+      } catch (err) {
+        await Swal.fire({ icon: "error", title: "Error", text: err.message || String(err) });
+        return;
+      }
+
+      // === Construcción de tabla(s) ===
+      const getColor = (nombreCat) => (categoriasIE.find(c => c.nombre === nombreCat) || {}).color || "#333";
+
+      const tableContent = agendaData.map(({ categoria, espacios }) => `
+        <h3 style="color:${getColor(categoria)};">${categoria}</h3>
+        <table style="width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:20px;">
+          <thead>
+            <tr>
+              <th style="border-bottom:2px solid #ddd;padding:8px;text-align:left;width:${seleccion === "TODAS" ? "70%" : "100%"};">Nombre del espacio</th>
+              ${seleccion === "TODAS" ? '<th style="border-bottom:2px solid #ddd;padding:8px;text-align:left;width:30%;">Categoría</th>' : ''}
+            </tr>
+          </thead>
+          <tbody>
+            ${espacios.map(esp => `
+              <tr>
+                <td style="border-bottom:1px solid #ddd;padding:8px;word-wrap:break-word;">${esp}</td>
+                ${seleccion === "TODAS" ? `<td style="border-bottom:1px solid #ddd;padding:8px;word-wrap:break-word;">${categoria}</td>` : ''}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `).join('');
+
+      // === Modal con buscador en tiempo real ===
+      Swal.fire({
+        title: `Agenda IE - ${seleccion}`,
+        html: `
+          <input type="text" id="searchInputIE" placeholder="Buscar un espacio..." style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;">
+          <div id="tableContainerIE">${tableContent}</div>
+        `,
+        width: '1000px',
+        showCloseButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Volver',
+        confirmButtonText: 'Salir',
+        didOpen: () => {
+          const searchInput = document.getElementById('searchInputIE');
+          const tableContainer = document.getElementById('tableContainerIE');
+
+          searchInput.addEventListener('input', () => {
+            const filter = searchInput.value.toLowerCase();
+            const rows = tableContainer.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+              const text = row.textContent.toLowerCase();
+              row.style.display = text.includes(filter) ? '' : 'none';
+            });
+          });
+        }
+      }).then((res) => {
+        if (res.isDismissed) {
+          generarAgendaFormativaIE(); // regresar al selector
+        }
+      });
+    }
+
+    async function mostrarDirectorioGeneral() {
+      const direc_ie = firebase.firestore().collection("directorio_ie");
+      const direc_ponentes = firebase.firestore().collection("directorio_ponentes");
+    
+      const { value: tipo } = await Swal.fire({
+        title: "📘 Consultar Directorio",
+        text: "Selecciona el tipo de directorio que deseas consultar:",
+        input: "select",
+        inputOptions: {
+          ie: "Directorio IE",
+          ponentes: "Directorio Ponentes"
+        },
+        inputPlaceholder: "Selecciona una opción",
+        showCancelButton: true,
+        cancelButtonText: "Salir",
+        confirmButtonText: "Consultar",
+        allowOutsideClick: false
+      });
+    
+      if (!tipo) return;
+    
+      const snapshot = await (tipo === "ie" ? direc_ie.get() : direc_ponentes.get());
+      if (snapshot.empty) {
+        await Swal.fire("Sin datos", "No se encontraron registros en esta colección.", "info");
+        return;
+      }
+    
+      const data = snapshot.docs.map(doc => doc.data());
+    
+      const CONFIG = {
+        ponentes: {
+          columnas: [
+            { key: "nombrePonente", label: "Nombre ponente" },
+            { key: "emailPonente", label: "Correo" },
+            { key: "telefonoPonente", label: "Teléfono" },
+            { key: "tipoEvento", label: "Tipo espacio" },
+            { key: "areaTrabajo", label: "Área trabajo" },
+            { key: "nombreEvento", label: "Nombre espacio" },
+            { key: "fechaEvento", label: "Fecha" },
+            { key: "capitulo_seccional", label: "Capítulo_Seccional" },
+            { key: "modalidadEvento", label: "Modalidad" }
+          ],
+          ocultar: ["Id"]
+        },
+        ie: {
+          columnas: [
+            { key: "nombreEvento", label: "Nombre espacio" },
+            { key: "nombrePonente", label: "Empresa/Ponente" },
+            { key: "emailPonente", label: "Correo" },
+            { key: "telefonoPonente", label: "Teléfono" },
+            { key: "areaTrabajo", label: "Área trabajo" },
+            { key: "capitulo_seccional", label: "Capítulo_Seccional" },
+            { key: "lugarPresencial", label: "Lugar físico" }
+          ],
+          ocultar: ["claveReserva"]
+        }
+      };
+    
+      const { columnas, ocultar } = CONFIG[tipo];
+    
+      const traducirTipoEvento = {
+        "valor-agregado": "Valor A.",
+        "entrenamiento-interno": "Entrenamiento I.",
+        "escuela-directores": "Escuela Direc.",
+        "intergracion-entorno": "Integra. Entorno"
+      };
+    
+      const traducirArea = {
+        "visita-tecnica-industrial": "Visita tec/ind.",
+        "foro-conversatorio": "Foro/Conversatorio",
+        "voluntariado-campana": "Volunt./Campaña",
+        "escuela-directores": "Escuela Direc.",
+        "habilidades-blandas": "Habil. Blandas",
+        "habilidades-duras": "Habil. Duras",
+        "conocimiento-aneiap": "Conoc. ANEIAP"
+      };
+    
+      // Función para obtener valor traducido si aplica
+      const valorTraducido = (key, val) => {
+        if (key === "tipoEvento") return traducirTipoEvento[val] || val;
+        if (key === "areaTrabajo") return traducirArea[val] || val;
+        return val || "";
+      };
+    
+      // Fila de encabezados
+      const tableHeaders = columnas
+        .filter(c => !ocultar.includes(c.key))
+        .map(c => `
+          <th style="
+            border-bottom: 2px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            background-color: #f8f8f8;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            font-size: 13px;
+            white-space: nowrap;
+          ">${c.label}</th>
+        `).join('');
+    
+      // Filas de datos
+      const tableRows = data.map(row => {
+        return `
+          <tr>
+            ${columnas
+              .filter(c => !ocultar.includes(c.key))
+              .map(c => {
+                let valor = valorTraducido(c.key, row[c.key]);
+    
+                const columnasAmplias = ["nombreEvento", "telefonoPonente", "emailPonente", "nombrePonente"];
+                const estilo = columnasAmplias.includes(c.key)
+                  ? "white-space: normal; word-wrap: break-word; max-width: 250px;"
+                  : "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;";
+    
+                return `<td style="border-bottom:1px solid #eee;padding:8px;font-size:13px;vertical-align:top;${estilo}">${valor}</td>`;
+              }).join('')}
+          </tr>
+        `;
+      }).join('');
+    
+      // Función para obtener opciones únicas traducidas
+      const obtenerOpcionesUnicas = (clave) => {
+        const set = new Set(data.map(d => valorTraducido(clave, d[clave])).filter(v => v));
+        return Array.from(set).sort();
+      };
+    
+      Swal.fire({
+        title: tipo === "ie" ? "Directorio IE" : "Directorio Ponentes",
+        html: `
+          <input type="text" id="searchInput" placeholder="🔍 Buscar global..." 
+            style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ccc;border-radius:6px;">
+          <div style="max-height:480px;overflow:auto;border:1px solid #eee;border-radius:6px;">
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                  <tr>${tableHeaders}</tr>
+                  <tr id="filterRow" style="background-color:#f0f0f0; position: sticky; top:36px; z-index:2;">
+                    ${columnas
+                      .filter(c => !ocultar.includes(c.key))
+                      .map(c => {
+                        if (["areaTrabajo", "capitulo_seccional", "tipoEvento", "modalidadEvento"].includes(c.key)) {
+                          const opciones = obtenerOpcionesUnicas(c.key)
+                            .map(op => `<option value="${op}">${op}</option>`).join('');
+                          return `<th style="padding:4px;">
+                            <select style="width:100%;padding:4px;font-size:12px;border:1px solid #ccc;border-radius:4px;" data-key="${c.key}">
+                              <option value="">Todos</option>
+                              ${opciones}
+                            </select>
+                          </th>`;
+                        } else {
+                          return `<th style="padding:4px;"><input type="text" placeholder="Filtrar ${c.label}" 
+                            style="width:100%;padding:4px;font-size:12px;border:1px solid #ccc;border-radius:4px;"
+                            data-key="${c.key}"></th>`;
+                        }
+                      }).join('')}
+                  </tr>
+                </thead>
+                <tbody id="tableBody">${tableRows}</tbody>
+              </table>
+            </div>
+          </div>
+        `,
+        width: '98%',
+        showCancelButton: true,
+        cancelButtonText: "Volver",
+        confirmButtonText: "Salir",
+        allowOutsideClick: false,
+        didOpen: () => {
+          const searchInput = document.getElementById("searchInput");
+          const tableBody = document.getElementById("tableBody");
+    
+          // Filtro global
+          searchInput.addEventListener("input", () => {
+            const filter = searchInput.value.toLowerCase();
+            const rows = tableBody.querySelectorAll("tr");
+            rows.forEach(row => {
+              const text = row.textContent.toLowerCase();
+              row.style.display = text.includes(filter) ? "" : "none";
+            });
+          });
+    
+          // Filtro por columna (inputs y selects)
+          const filterInputs = document.querySelectorAll("#filterRow input, #filterRow select");
+          filterInputs.forEach(input => {
+            input.addEventListener("input", aplicarFiltros);
+            input.addEventListener("change", aplicarFiltros);
+          });
+    
+          function aplicarFiltros() {
+            const filters = Array.from(filterInputs).map(i => i.value.toLowerCase());
+            const rows = tableBody.querySelectorAll("tr");
+            rows.forEach(row => {
+              const cells = row.querySelectorAll("td");
+              let visible = true;
+              cells.forEach((cell, idx) => {
+                if (filters[idx] && !cell.textContent.toLowerCase().includes(filters[idx])) {
+                  visible = false;
+                }
+              });
+              row.style.display = visible ? "" : "none";
+            });
+          }
+        }
+      }).then(result => {
+        if (result.isDismissed) mostrarDirectorioGeneral();
+      });
+    }
+  
+async function descargarDatosMultiplesColeccionesExcel() {
+    // Referencias a las colecciones de Firebase
+    const colecciones = [
+        { nombre: "reservas", ref: firebase.firestore().collection("reservas") },
+        { nombre: "cuentas", ref: firebase.firestore().collection("cuentas") },
+        { nombre: "piezas", ref: firebase.firestore().collection("piezas") },
+        { nombre: "crmeventos", ref: firebase.firestore().collection("crmeventos") }
+    ];
+
+    try {
+        // Crear un nuevo libro de trabajo
+        const workbook = XLSX.utils.book_new();
+
+        for (const coleccion of colecciones) {
+            const querySnapshot = await coleccion.ref.get();
+            const data = [];
+
+            // Procesar cada documento de la colección
+            querySnapshot.forEach(doc => {
+                const docData = doc.data();
+                docData.id = doc.id; // Añadir el ID del documento como un campo
+
+                // Crear un objeto ordenado alfabéticamente
+                const docDataOrdenado = {};
+                Object.keys(docData).sort().forEach(key => {
+                    docDataOrdenado[key] = docData[key];
+                });
+                data.push(docDataOrdenado);
+            });
+
+            // Crear una hoja de trabajo a partir de los datos de la colección
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(workbook, worksheet, coleccion.nombre.charAt(0).toUpperCase() + coleccion.nombre.slice(1));
+        }
+
+        // Obtener la fecha y hora actual para el nombre del archivo
+        const now = new Date();
+        const fecha = now.toISOString().slice(0, 10);
+        const hora = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+        const nombreArchivo = `Backup_MultiplesColecciones_${fecha}_${hora}.xlsx`;
+
+        // Descargar el archivo Excel con todas las hojas
+        XLSX.writeFile(workbook, nombreArchivo);
+        alert("Copia de seguridad descargada correctamente con todas las colecciones.");
+
+    } catch (error) {
+        console.error("Error al descargar las colecciones:", error);
+        alert("Ocurrió un error al descargar la copia de seguridad.");
+    }
+}
 
     // Función para capitalizar el área de trabajo
     function capitalize(str) {
@@ -11095,3 +12109,40 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
