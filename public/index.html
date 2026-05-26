@@ -13,6 +13,7 @@
             --card-bg: #ffffff;
             --text-color: #334155;
             --border-color: #e2e8f0;
+            --gray-btn: #64748b;
         }
 
         * {
@@ -91,51 +92,92 @@
             padding-bottom: 8px;
         }
 
-        .link-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #e2e8f0;
+        .link-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
         }
 
-        .link-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
+        .link-card:last-child {
+            margin-bottom: 0;
         }
 
-        .link-item:first-child {
-            padding-top: 0;
+        .link-info {
+            margin-bottom: 12px;
         }
 
         .link-label {
-            font-weight: 500;
+            font-weight: 600;
             font-size: 15px;
             color: var(--secondary-color);
+            display: block;
+            margin-bottom: 2px;
         }
 
-        .link-button {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: #ffffff;
+        .link-url {
+            font-size: 13px;
+            color: #64748b;
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
             text-decoration: none;
-            padding: 6px 14px;
+            padding: 8px 16px;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 500;
-            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
-        .link-button:hover {
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-access {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .btn-access:hover {
             background-color: #1d4ed8;
         }
 
-        .link-button.main-btn {
+        .btn-access.main-btn {
             background-color: var(--accent-color);
         }
 
-        .link-button.main-btn:hover {
+        .btn-access.main-btn:hover {
             background-color: #059669;
+        }
+
+        .btn-copy {
+            background-color: #e2e8f0;
+            color: var(--secondary-color);
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-copy:hover {
+            background-color: #cbd5e1;
+        }
+
+        .btn-copy.copied {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
         }
 
         .footer {
@@ -149,14 +191,9 @@
         }
 
         @media (max-width: 480px) {
-            .link-item {
+            .button-group {
                 flex-direction: column;
-                align-items: flex-start;
                 gap: 8px;
-            }
-            .link-button {
-                width: 100%;
-                text-align: center;
             }
         }
     </style>
@@ -165,41 +202,71 @@
 
     <div class="container">
         <div class="header">
-            <h1>Actualización de Infraestructura</h1>
+            <h1>ACTUALIZACIÓN DE INFRAESTRUCTURA</h1>
             <p>Sistema SIEA</p>
         </div>
         
         <div class="content">
-            <p>Estimado usuario, con el objetivo de fortalecer la identidad institucional y centralizar nuestros servicios, los enlaces de acceso al sistema SIEA han sido modificados y trasladados formalmente al dominio oficial de la organización.</p>
+            <p>Estimado usuario, con el objetivo de fortalecer la identidad institucional y centralizar nuestros servicios, se ha realizado un cambio de links de acceso general para la plataforma.</p>
             
-            <p>Los accesos anteriores bajo el dominio personal han sido dados de baja. A continuación, compartimos las nuevas direcciones oficiales de publicación:</p>
+            <p>Los accesos anteriores bajo el dominio personal han sido dados de baja. A continuación, compartimos las nuevas direcciones oficiales de publicación junto con sus herramientas de acceso rápido:</p>
             
             <div class="links-section">
-                <h2>Enlaces Oficiales de Acceso</h2>
+                <h2>ENLACES OFICIALES DE ACCESO</h2>
                 
-                <div class="link-item">
-                    <span class="link-label">Plataforma Principal (General)</span>
-                    <a href="https://aneiap.github.io/siea/general.html" class="link-button main-btn" target="_blank">Acceder</a>
+                <div class="link-card">
+                    <div class="link-info">
+                        <span class="link-label">Plataforma principal (General)</span>
+                        <span class="link-url">https://aneiap.github.io/siea/general.html</span>
+                    </div>
+                    <div class="button-group">
+                        <a href="https://aneiap.github.io/siea/general.html" class="btn btn-access main-btn" target="_blank">Acceder al sitio</a>
+                        <button class="btn btn-copy" onclick="copyLink('https://aneiap.github.io/siea/general.html', this)">Copiar enlace</button>
+                    </div>
                 </div>
                 
-                <div class="link-item">
-                    <span class="link-label">Reserva de Espacios</span>
-                    <a href="https://aneiap.github.io/siea/reservar.html" class="link-button" target="_blank">Acceder</a>
+                <div class="link-card">
+                    <div class="link-info">
+                        <span class="link-label">Reserva de espacios</span>
+                        <span class="link-url">https://aneiap.github.io/siea/reservar.html</span>
+                    </div>
+                    <div class="button-group">
+                        <a href="https://aneiap.github.io/siea/reservar.html" class="btn btn-access" target="_blank">Acceder al sitio</a>
+                        <button class="btn btn-copy" onclick="copyLink('https://aneiap.github.io/siea/reservar.html', this)">Copiar enlace</button>
+                    </div>
                 </div>
                 
-                <div class="link-item">
-                    <span class="link-label">Encuesta de Satisfacción</span>
-                    <a href="https://aneiap.github.io/siea/satisfaccion.html" class="link-button" target="_blank">Acceder</a>
+                <div class="link-card">
+                    <div class="link-info">
+                        <span class="link-label">Encuesta de satisfacción</span>
+                        <span class="link-url">https://aneiap.github.io/siea/satisfaccion.html</span>
+                    </div>
+                    <div class="button-group">
+                        <a href="https://aneiap.github.io/siea/satisfaccion.html" class="btn btn-access" target="_blank">Acceder al sitio</a>
+                        <button class="btn btn-copy" onclick="copyLink('https://aneiap.github.io/siea/satisfaccion.html', this)">Copiar enlace</button>
+                    </div>
                 </div>
                 
-                <div class="link-item">
-                    <span class="link-label">Evaluación de Eventos</span>
-                    <a href="https://aneiap.github.io/siea/eventos.html" class="link-button" target="_blank">Acceder</a>
+                <div class="link-card">
+                    <div class="link-info">
+                        <span class="link-label">Evaluación de eventos</span>
+                        <span class="link-url">https://aneiap.github.io/siea/eventos.html</span>
+                    </div>
+                    <div class="button-group">
+                        <a href="https://aneiap.github.io/siea/eventos.html" class="btn btn-access" target="_blank">Acceder al sitio</a>
+                        <button class="btn btn-copy" onclick="copyLink('https://aneiap.github.io/siea/eventos.html', this)">Copiar enlace</button>
+                    </div>
                 </div>
                 
-                <div class="link-item">
-                    <span class="link-label">Repositorio de Piezas Gráficas</span>
-                    <a href="https://aneiap.github.io/siea/piezas.html" class="link-button" target="_blank">Acceder</a>
+                <div class="link-card">
+                    <div class="link-info">
+                        <span class="link-label">Solicitud de piezas publicitarias</span>
+                        <span class="link-url">https://aneiap.github.io/siea/piezas.html</span>
+                    </div>
+                    <div class="button-group">
+                        <a href="https://aneiap.github.io/siea/piezas.html" class="btn btn-access" target="_blank">Acceder al sitio</a>
+                        <button class="btn btn-copy" onclick="copyLink('https://aneiap.github.io/siea/piezas.html', this)">Copiar enlace</button>
+                    </div>
                 </div>
             </div>
             
@@ -211,5 +278,21 @@
         </div>
     </div>
 
+    <script>
+        function copyLink(url, button) {
+            navigator.clipboard.writeText(url).then(() => {
+                const originalText = button.innerText;
+                button.innerText = "¡Copiado!";
+                button.classList.add("copied");
+                
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.classList.remove("copied");
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar el enlace: ', err);
+            });
+        }
+    </script>
 </body>
 </html>
