@@ -1792,6 +1792,10 @@
           <!-- Mensaje de estado de la tabla -->
           <p id="estadoTablaEvaluaciones" style="text-align: center; display: block;">La tabla de evaluaciones de satisfacción está oculta</p>
           <!-- Tabla con las evaluaciones -->
+            <div id="contenedor-buscador-evaluaciones" style="display: none; margin-bottom: 15px; text-align: left;">
+            <label for="buscador-evaluaciones"><b>🔍 Buscar asistente o comentario en tiempo real:</b></label>
+            <input type="text" id="buscador-evaluaciones" onkeyup="filtrarTablaEvaluaciones()" placeholder="Escribe un nombre, correo, nota o palabra clave..." style="width: 100%; padding: 8px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+            </div>
           <table id="tabla-evaluaciones" class="tabla-evaluaciones" style="display: none;">
             <thead>
               <tr>
@@ -2246,6 +2250,38 @@
                 confirmButtonText: 'Aceptar'
             });
         });
+    }
+
+    function filtrarTablaEvaluaciones() {
+        var input = document.getElementById("buscador-evaluaciones").value.toLowerCase().trim();
+        var tabla = document.getElementById("tabla-evaluaciones");
+        var filas = tabla.getElementsByTagName("tbody")[0].rows;
+        
+        // Recorremos todas las filas de la tabla
+        for (var i = 0; i < filas.length; i++) {
+            var filaActual = filas[i];
+            
+            // 1. PROTEGER EL RESUMEN: Si es la fila azul del Resumen de Satisfacción, la dejamos siempre visible
+            if (filaActual.style.background === "rgb(19, 49, 92)" || filaActual.innerText.includes("RESUMEN DE SATISFACCIÓN")) {
+                filaActual.style.display = ""; 
+                continue; // Saltamos al siguiente ciclo para no ocultarla jamás
+            }
+            
+            // 2. FILTRADO INTELIGENTE: Acumular el texto real de cada celda de la fila ordinaria
+            var textoFilaAcumulado = "";
+            var celdas = filaActual.cells;
+            
+            for (var j = 0; j < celdas.length; j++) {
+                textoFilaAcumulado += celdas[j].textContent.toLowerCase() + " ";
+            }
+            
+            // 3. Evaluar coincidencia en tiempo real
+            if (textoFilaAcumulado.includes(input)) {
+                filaActual.style.display = ""; // Muestra la fila si coincide
+            } else {
+                filaActual.style.display = "none"; // Oculta la fila si no coincide
+            }
+        }
     }
 
     // Primera feature: Función para actualizar los nombres de los espacios según las fechas seleccionadas
@@ -7978,19 +8014,36 @@ function eliminarReserva() {
 
     // Función para alternar la visibilidad de la tabla de evaluaciones y cambiar el texto del botón
     function toggleEvaluaciones() {
-      var tabla = document.getElementById("tabla-evaluaciones");
-      var boton = document.getElementById("toggleEvaluaciones");
-      var estadoTabla = document.getElementById("estadoTablaEvaluaciones");
-      if (tabla.style.display === "none") {
-        tabla.style.display = "block";
-        boton.textContent = "Ocultar tabla de evaluaciones";
-        estadoTabla.style.display = "none"; // Oculta el mensaje de estado
-        consultarEvaluaciones();
-      } else {
-        tabla.style.display = "none";
-        boton.textContent = "Mostrar tabla de evaluaciones";
-        estadoTabla.style.display = "block"; // Muestra el mensaje de estado
-      }
+        var tabla = document.getElementById("tabla-evaluaciones");
+        var boton = document.getElementById("toggleEvaluaciones");
+        var estado = document.getElementById("estadoTablaEvaluaciones");
+        var buscadorContenedor = document.getElementById("contenedor-buscador-evaluaciones"); // <--- ESTO ENCIENDE EL BUSCADOR
+
+        if (tabla.style.display === "none" || tabla.style.display === "") {
+            tabla.style.display = "table";
+            boton.textContent = "Ocultar tabla de evaluaciones";
+            if (buscadorContenedor) buscadorContenedor.style.display = "block"; // <--- AQUÍ SE MUESTRA
+            
+            if (estado.innerHTML.includes("duplicadas")) {
+                estado.style.display = "block";
+                estado.innerHTML = estado.innerHTML.replace("La tabla de evaluaciones de satisfacción está oculta <br>", "");
+            } else {
+                estado.style.display = "none";
+            }
+        } else {
+            tabla.style.display = "none";
+            boton.textContent = "Mostrar tabla de evaluaciones";
+            if (buscadorContenedor) buscadorContenedor.style.display = "none"; // <--- AQUÍ SE OCULTA
+            
+            if (estado.innerHTML.includes("duplicadas")) {
+                if (!estado.innerHTML.includes("oculta")) {
+                    estado.innerHTML = "La tabla de evaluaciones de satisfacción está oculta <br>" + estado.innerHTML;
+                }
+            } else {
+                estado.textContent = "La tabla de evaluaciones de satisfacción está oculta";
+            }
+            estado.style.display = "block";
+        }
     }
 
     // Obtener los elementos de fecha inicial y final y agregar eventos change a los campos de fecha
@@ -8085,6 +8138,10 @@ function eliminarReserva() {
             var tablaBody = document.getElementById("tabla-evaluaciones").getElementsByTagName("tbody")[0];
             tablaBody.innerHTML = "";
 
+            // NUEVO: Limpiar el buscador cada vez que se consulte un evento nuevo
+            var inputBuscador = document.getElementById("buscador-evaluaciones");
+            if (inputBuscador) { inputBuscador.value = ""; }
+
             if (querySnapshot.empty) {
                 var mensaje = document.createElement("tr");
                 var mensajeCell = document.createElement("td");
@@ -8105,6 +8162,9 @@ function eliminarReserva() {
             var promotores = 0;
             var totalAsistentesFirebase = 0;
             var porcentajeSatisfaccionFirebase = 0;
+            
+            // Variables auxiliares para la detección de duplicados en la renderización
+            var hayDuplicadosDetectados = false;
 
             querySnapshot.forEach(function(doc) {
                 var data = doc.data();
@@ -8119,10 +8179,28 @@ function eliminarReserva() {
                     porcentajeSatisfaccionFirebase = data.satisfaccion;
                 }
 
-                var respuestas1 = data.respuestas1.split("|");
+                var respuestas1 = (data.respuestas1 || "").split("|");
+                var asistentes = (data.asistentes || "").split("|");
+                var correosAsistentes = (data.correosAsistentes || "").split("|");
+
+                // Quitar el último elemento si quedó vacío por el split del pipe terminal
+                if (asistentes[asistentes.length - 1] === "") asistentes.pop();
+                if (correosAsistentes[correosAsistentes.length - 1] === "") correosAsistentes.pop();
+
+                // --- LÓGICA DE DETECCIÓN DE RESPUESTAS DUPLICADAS ---
+                var registrosUnicos = [];
+                for (var k = 0; k < asistentes.length; k++) {
+                    var llaveUnica = asistentes[k].trim().toLowerCase() + "||" + correosAsistentes[k].trim().toLowerCase();
+                    if (registrosUnicos.includes(llaveUnica)) {
+                        hayDuplicadosDetectados = true;
+                    } else {
+                        registrosUnicos.push(llaveUnica);
+                    }
+                }
 
                 // Contabilizar respuestas NPS
-                for (var i = 0; i < respuestas1.length - 1; i++) {
+                for (var i = 0; i < respuestas1.length; i++) {
+                    if (respuestas1[i] === "") continue;
                     var score = parseInt(respuestas1[i]);
                     if (!isNaN(score)) {
                         totalRespuestas++;
@@ -8134,9 +8212,29 @@ function eliminarReserva() {
                 console.log("Total respuestas:" + totalRespuestas)
             });
 
+            // Configuración dinámica del mensaje de estado sobre la tabla
+            var estadoLabel = document.getElementById("estadoTablaEvaluaciones");
+            var tablaEstilo = document.getElementById("tabla-evaluaciones").style.display;
+
+            if (tablaEstilo === "none" || tablaEstilo === "") {
+                if (hayDuplicadosDetectados) {
+                    estadoLabel.innerHTML = "La tabla de evaluaciones de satisfacción está oculta <br><span style='color: #d90429; font-weight: bold;'>⚠️ Se detectaron respuestas duplicadas en este espacio. Recomendamos usar el botón de depuración.</span>";
+                } else {
+                    estadoLabel.textContent = "La tabla de evaluaciones de satisfacción está oculta";
+                }
+                estadoLabel.style.display = "block";
+            } else {
+                if (hayDuplicadosDetectados) {
+                    estadoLabel.innerHTML = "<span style='color: #d90429; font-weight: bold;'>⚠️ Se detectaron respuestas duplicadas en este espacio. Recomendamos usar el botón de depuración.</span>";
+                    estadoLabel.style.display = "block";
+                } else {
+                    estadoLabel.style.display = "none";
+                }
+            }
+
             // Cálculos finales
             var porcentajeRespuestas = (totalRespuestas > 0 && totalAsistentesFirebase > 0)
-                ? ((totalRespuestas*100 / totalAsistentesFirebase)).toFixed(2) + "%"
+                ? ((totalRespuestas * 100 / totalAsistentesFirebase)).toFixed(2) + "%"
                 : "0.00%";
 
             var porcentajeSatisfaccion = porcentajeSatisfaccionFirebase 
@@ -8159,9 +8257,7 @@ function eliminarReserva() {
                 " — Detractores: " + (totalRespuestas > 0 ? detractores : 0) +
                 " — Pasivos: " + (totalRespuestas > 0 ? pasivos : 0) +
                 " — Promotores: " + (totalRespuestas > 0 ? promotores : 0) +
-                "<br>% respuestas: " + (totalRespuestas > 0 
-                    ? porcentajeRespuestas 
-                    : "0.00%") +
+                "<br>% respuestas: " + (totalRespuestas > 0 ? porcentajeRespuestas : "0.00%") +
                 " — % satisfacción Firebase: " + (porcentajeSatisfaccionFirebase 
                     ? (porcentajeSatisfaccionFirebase * 100).toFixed(2) + "%" 
                     : "N/A");
