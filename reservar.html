@@ -735,23 +735,25 @@
         </div>
       </div>
       <h2 style="font-size: 22px; text-transform: uppercase;"><p style="text-align: center;">DATOS PARA EL COMITÉ DE PIEZAS</p></h2>
-      <div class="row">
-        <div class="third">
-          <label for="publicidad-comite"><b>¿Deseas que el comité de piezas capitular te realice la publicidad del espacio? *</b></label>
-          <select id="publicidad-comite">
-            <option value="si">SÍ</option>
-            <option value="no">NO</option>
-          </select>
-        </div>
-        <div class="third">
-          <label for="observaciones-publicidad"><b>Observaciones para que el comité de piezas tenga en cuenta al hacer tu publicidad:</b></label>
-          <textarea id="observaciones-publicidad" rows="1" placeholder="Ingresa observaciones para la publicidad del evento."></textarea>
-        </div>
-        <div class="third">
-          <label for="foto-ponente"><b>Enlace de Google Drive de la foto del ponente para colocar en la pieza:</b></label>
-          <input type="text" id="foto-ponente" placeholder="Ingresa el enlace de Google Drive, debe estar compartido para cualquier correo.">
-        </div>
-      </div>
+<div class="row">
+  <div class="third">
+    <label for="publicidad-comite"><b>¿Deseas que el comité de piezas capitular te realice la publicidad del espacio? *</b></label>
+    <select id="publicidad-comite" onchange="controlarCamposPublicidad()">
+      <option value="no" selected>NO</option>
+      <option value="si">SÍ</option>
+    </select>
+  </div>
+  
+  <div class="third" id="contenedor-observaciones-publicidad" style="display: none;">
+    <label for="observaciones-publicidad"><b>Observaciones para que el comité de piezas tenga en cuenta al hacer tu publicidad:</b></label>
+    <textarea id="observaciones-publicidad" rows="1" placeholder="Ingresa observaciones para la publicidad del evento."></textarea>
+  </div>
+  
+  <div class="third" id="contenedor-foto-ponente" style="display: none;">
+    <label for="foto-ponente"><b>Enlace de Google Drive de la foto del ponente para colocar en la pieza:</b></label>
+    <input type="text" id="foto-ponente" placeholder="Ingresa el enlace de Google Drive, debe estar compartido para cualquier correo.">
+  </div>
+</div>
       <button class="button-reservar" onclick="registrarEvento()">Registrar evento</button>
       <button onclick="iniciarSesionJDN()">JDN</button>
       </div>
@@ -912,6 +914,34 @@
             arrayCapitulosSeleccionados = [valorSeleccionado];
         }
     }
+
+function controlarCamposPublicidad() {
+    var seleccion = document.getElementById("publicidad-comite").value;
+    var contenedorObs = document.getElementById("contenedor-observaciones-publicidad");
+    var contenedorFoto = document.getElementById("contenedor-foto-ponente");
+    
+    var inputObs = document.getElementById("observaciones-publicidad");
+    var inputFoto = document.getElementById("foto-ponente");
+
+    if (seleccion === "si") {
+        // Mostrar campos con animación fluida de bloque de cuadrícula
+        if (contenedorObs) contenedorObs.style.display = "block";
+        if (contenedorFoto) contenedorFoto.style.display = "block";
+    } else {
+        // Ocultar campos de inmediato
+        if (contenedorObs) contenedorObs.style.display = "none";
+        if (contenedorFoto) contenedorFoto.style.display = "none";
+        
+        // Buenas prácticas UX: Limpiar los campos ocultos para que no viajen strings accidentales a Firebase
+        if (inputObs) inputObs.value = "";
+        if (inputFoto) inputFoto.value = "";
+    }
+}
+
+// Asegurar que la lógica se evalúe inmediatamente al renderizar la página por primera vez
+window.addEventListener('DOMContentLoaded', function() {
+    controlarCamposPublicidad();
+});
 
     // Esta función permite cambiar la visibilidad de los campos "ubicación/plataforma" y "lugar presencial"
     // en la sección "REGISTRAR RESERVA (AC1)" según la modalidad seleccionada.
