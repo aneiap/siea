@@ -686,35 +686,39 @@
                 <input type="text" id="email-organizador" placeholder="Ingresa tu email.">
             </div>
             <div class="half">
-                <label for="capitulo-organizador"><b>Capítulo:</b></label>
-                <select id="capitulo-organizador">
-                  <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
-                  <option value="uniguajira">UNIGUAJIRA</option>
-                  <option value="unimagdalena">UNIMAGDALENA</option>
-                  <option value="usasm">USASM</option>
-                  <option value="unicaribe">UNICARIBE</option>
-                  <option value="uniatlantico">UNIATLÁNTICO</option>
-                  <option value="uninorte">UNINORTE</option>
-                  <option value="unisimon">UNISIMÓN</option>
-                  <option value="cuc">CUC</option>
-                  <option value="librequilla">LIBREQUILLA</option>
-                  <option value="utb">UTB</option>
-                  <option value="upbmonteria">UPBMONTERÍA</option>
-                  <option value="unicordoba">UNICÓRDOBA</option>
-                  <option value="ufps">UFPS</option>
-                  <option value="unalmed">UNALMED</option>
-                  <option value="udea">UDEA</option>
-                  <option value="upbmed">UPBMED</option>
-                  <option value="utp">UTP</option>
-                  <option value="unalma">UNALMA</option>
-                  <option value="udistrital">UDISTRITAL</option>
-                  <option value="unalbog">UNALBOG</option>
-                  <option value="univalle">UNIVALLE</option>
-                  <option value="icesi">ICESI</option>
-                  <option value="uao">UAO</option>
-                  <option value="usc">USC</option>
-                  <option value="nacional">ANEIAP NACIONAL</option>
+            <label for="capitulo-organizador"><b>Capítulo: *</b></label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="capitulo-organizador" onchange="actualizarCapituloUnico()">
+                <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
+                <option value="uniguajira">UNIGUAJIRA</option>
+                <option value="unimagdalena">UNIMAGDALENA</option>
+                <option value="usasm">USASM</option>
+                <option value="unicaribe">UNICARIBE</option>
+                <option value="uniatlantico">UNIATLÁNTICO</option>
+                <option value="uninorte">UNINORTE</option>
+                <option value="unisimon">UNISIMÓN</option>
+                <option value="cuc">CUC</option>
+                <option value="librequilla">LIBREQUILLA</option>
+                <option value="utb">UTB</option>
+                <option value="upbmonteria">UPBMONTERÍA</option>
+                <option value="unicordoba">UNICÓRDOBA</option>
+                <option value="ufps">UFPS</option>
+                <option value="unalmed">UNALMED</option>
+                <option value="udea">UDEA</option>
+                <option value="upbmed">UPBMED</option>
+                <option value="utp">UTP</option>
+                <option value="unalma">UNALMA</option>
+                <option value="udistrital">UDISTRITAL</option>
+                <option value="unalbog">UNALBOG</option>
+                <option value="univalle">UNIVALLE</option>
+                <option value="icesi">ICESI</option>
+                <option value="uao">UAO</option>
+                <option value="usc">USC</option>
+                <option value="nacional">ANEIAP NACIONAL</option>
                 </select>
+                <!-- Botón para activar la selección múltiple si lo requiere -->
+                <button type="button" onclick="seleccionarMultiCapitulos()" style="background-color: #00B30F; color: white; border: none; font-size: 20px; font-weight: bold; cursor: pointer; padding: 2px 12px; border-radius: 5px; height: 32px; margin-bottom: 5px;">+</button>
+            </div>
             </div>
           </div>
           <label for="telefono-organizador"><b>Teléfono del organizador: *</b></label>
@@ -761,6 +765,154 @@
     var capituloUsuario = "";
     var escogioPublicidadNacional = "no";
 
+    // Variable global para controlar los capítulos (nombres en código/id de BD)
+    var arrayCapitulosSeleccionados = [];
+
+    async function seleccionarMultiCapitulos() {
+        var selectPrincipal = document.getElementById("capitulo-organizador");
+
+        // VALIDACIÓN: Detener el flujo si está seleccionado ANEIAP NACIONAL o si el usuario es de JDN
+        if (selectPrincipal.value === "nacional" || capituloUsuario === "nacional") {
+            Swal.fire({
+                title: '¡ACCIÓN NO PERMITIDA!',
+                html: '<p>La selección múltiple no está habilitada para la gestión nacional.</p><p style="color: red; font-weight: bold; margin-top: 10px;">Disponible solo para reservas capitulares</p>',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+            });
+            return; 
+        }
+
+        const opcionesCapitulos = {
+            "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
+            "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
+            "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
+            "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
+            "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
+            "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
+            "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC"
+        };
+        
+        // --- LÓGICA DE DETECCIÓN INTELIGENTE ---
+        if (selectPrincipal.selectedIndex !== -1) {
+            var textoVisible = selectPrincipal.options[selectPrincipal.selectedIndex].text;
+            
+            if (textoVisible && !textoVisible.includes("Selecciona el capítulo")) {
+                // Romper por comas la selección previa de la pantalla
+                var nombresArray = textoVisible.split(",").map(item => item.trim()).filter(item => item !== "");
+                
+                // Reconstruir el array global emparejando con las claves internas de la BD
+                arrayCapitulosSeleccionados = nombresArray.map(nombre => {
+                    return Object.keys(opcionesCapitulos).find(key => opcionesCapitulos[key] === nombre);
+                }).filter(key => key !== undefined);
+            }
+        }
+
+        // Estructurar el contenedor HTML para los 5 selectores del SweetAlert2
+        let formHtml = `<div style="text-align: left;">`;
+        
+        for (let i = 1; i <= 5; i++) {
+            let valorPrecargado = arrayCapitulosSeleccionados[i - 1] || "";
+            
+            // El primer select siempre se muestra; los siguientes se habilitan si tienen data o si el anterior ya fue llenado
+            let debeMostrar = (i === 1 || valorPrecargado !== "" || (arrayCapitulosSeleccionados[i - 2] !== undefined));
+
+            let opcionesHtml = `<option value="" disabled ${valorPrecargado === "" ? "selected" : ""} hidden>Selecciona un capítulo</option>`;
+            for (const [key, value] of Object.entries(opcionesCapitulos)) {
+                opcionesHtml += `<option value="${key}" ${valorPrecargado === key ? "selected" : ""}>${value}</option>`;
+            }
+
+            formHtml += `
+                <label style="font-size:14px; margin-top:10px; display:${debeMostrar ? 'block' : 'none'}" id="lbl-cap${i}"><b>Capítulo ${i}:</b></label>
+                <select id="sel-cap${i}" class="swal2-input" style="width: 100%; margin-top:5px; display:${debeMostrar ? 'block' : 'none'}" onchange="mostrarSiguienteSelector(${i})">
+                    ${opcionesHtml}
+                </select>
+            `;
+        }
+        formHtml += `</div>`;
+
+        // Desplegar el modal interactivo
+        const { value: formValues } = await Swal.fire({
+            title: 'SELECCIONA TUS CAPÍTULOS (MÁX. 5) 🦉',
+            html: formHtml,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Selección',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                let seleccionados = [];
+                for (let i = 1; i <= 5; i++) {
+                    let val = document.getElementById(`sel-cap${i}`).value;
+                    // Filtrar selecciones vacías y evitar duplicados en el envío
+                    if (val && !seleccionados.includes(val)) {
+                        seleccionados.push(val);
+                    }
+                }
+                if (seleccionados.length === 0) {
+                    Swal.showValidationMessage('Debes seleccionar al menos un (1) capítulo.');
+                    return false;
+                }
+                return seleccionados;
+            }
+        });
+
+        // Procesar la confirmación del usuario
+        if (formValues) {
+            arrayCapitulosSeleccionados = formValues;
+            
+            // Unificar los nombres en formato visible usando comas para el menú principal
+            const nombresVisibles = formValues.map(key => opcionesCapitulos[key]).join(", ");
+            
+            // Buscar o instanciar la opción virtual "multi" en el select de la interfaz
+            var opcionMulti = selectPrincipal.querySelector('option[value="multi"]');
+            if (!opcionMulti) {
+                opcionMulti = document.createElement("option");
+                opcionMulti.value = "multi";
+                selectPrincipal.appendChild(opcionMulti);
+            }
+            
+            opcionMulti.text = nombresVisibles;
+            selectPrincipal.value = "multi";
+        }
+    }
+
+    function mostrarSiguienteSelector(index) {
+        if (index < 5) {
+            const siguienteSelect = document.getElementById(`sel-cap${index + 1}`);
+            const siguienteLbl = document.getElementById(`lbl-cap${index + 1}`);
+            if (siguienteSelect && siguienteSelect.style.display === "none") {
+                siguienteSelect.style.display = "block";
+                siguienteLbl.style.display = "block";
+            }
+        }
+    }
+
+    // Función auxiliar para ir mostrando el siguiente desplegable automáticamente dentro del Swal
+    function mostrarSiguienteSelector(index) {
+        if (index < 5) {
+            const siguienteSelect = document.getElementById(`sel-cap${index + 1}`);
+            const siguienteLbl = document.getElementById(`lbl-cap${index + 1}`);
+            if (siguienteSelect && siguienteSelect.style.display === "none") {
+                siguienteSelect.style.display = "block";
+                siguienteLbl.style.display = "block";
+            }
+        }
+    }
+
+    // Esta función se ejecuta cada vez que el usuario usa el select tradicional
+    function actualizarCapituloUnico() {
+        var select = document.getElementById("capitulo-organizador");
+        var valorSeleccionado = select.value;
+        
+        // Si el usuario elige un capítulo normal, reiniciamos el array y guardamos solo ese
+        if (valorSeleccionado) {
+            arrayCapitulosSeleccionados = [valorSeleccionado];
+        }
+    }
+
     // Esta función permite cambiar la visibilidad de los campos "ubicación/plataforma" y "lugar presencial"
     // en la sección "REGISTRAR RESERVA (AC1)" según la modalidad seleccionada.
     function toggleUbicacionPlataforma() {
@@ -787,13 +939,169 @@
       }
     }
 
+    function verificarDisponibilidadRegistro() {
+    return new Promise((resolve, reject) => {
+        var nuevaFecha = document.getElementById("fecha-evento").value;
+        var nuevaHora = Number(document.getElementById("hora-evento").value);
+        var nuevaDuracion = Number(document.getElementById("duracion-evento").value);
+
+        // Validación de hora límite (22:00)
+        if (nuevaDuracion + nuevaHora > 1321) {
+        Swal.fire({
+            title: '¡ESTÁS INTENTANDO RESERVAR DESPUÉS DE LAS 22:00 (10PM)!',
+            text: 'El evento debe estar programado para finalizar a más tardar hasta las 22:00, ve a la duración del mismo y edítala de tal forma que no se excedan las 22:00 (10pm)',
+            icon: 'warning',
+            confirmButtonText: 'Aceptar',
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        });
+        resolve(false);
+        return;
+        }
+
+        // Asegurar que haya al menos un capítulo seleccionado
+        if (arrayCapitulosSeleccionados.length === 0) {
+        var selectPrincipal = document.getElementById("capitulo-organizador");
+        if (selectPrincipal.value && selectPrincipal.value !== "multi") {
+            arrayCapitulosSeleccionados = [selectPrincipal.value];
+        } else {
+            Swal.fire({
+            title: '¡FALTAN CAMPOS!',
+            text: 'Por favor, selecciona al menos un capítulo antes de continuar.',
+            icon: 'warning',
+            confirmButtonText: 'Aceptar'
+            });
+            resolve(false);
+            return;
+        }
+        }
+
+        var reservasRef = firebase.firestore().collection("reservas");
+        
+        // Mapeamos cada capítulo seleccionado a una Promesa de consulta individual
+        let consultasPromesas = arrayCapitulosSeleccionados.map(capituloIndividual => {
+        let consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "in", [capituloIndividual, "nacional"]);
+        
+        return consulta.get().then(function(querySnapshot) {
+            var disponibilidadHorarios = Array(28).fill(true);
+
+            querySnapshot.forEach(function(doc) {
+            var data = doc.data();
+
+            // Ignorar escuela-directores nacional
+            if (data && data.capitulo === "nacional" && data.tipoEvento === "escuela-directores") {
+                return;
+            }
+
+            var horaEvento = Number(data.horaEvento);
+            var duracionEvento = Number(data.duracionEvento);
+            
+            var inicioIntervalo = Math.max(0, Math.floor((horaEvento - 480) / 30));
+            var finIntervalo = Math.min(28, inicioIntervalo + Math.floor(duracionEvento / 30));
+
+            for (var i = inicioIntervalo; i < finIntervalo; i++) {
+                disponibilidadHorarios[i] = false;
+            }
+            });
+
+            // Calcular índices del nuevo intervalo deseado
+            var inicioNuevoIntervalo = Math.max(0, Math.floor((nuevaHora - 480) / 30));
+            var finNuevoIntervalo = Math.min(28, inicioNuevoIntervalo + Math.floor(nuevaDuracion / 30));
+
+            // Evaluar paquetes de horarios para este capítulo específico
+            var disponibilidadMatutino = true;
+            var disponibilidadVesperino = true;
+            var disponibilidadNocturno = true;
+
+            for (var i = 0; i <= 9; i++) { if (!disponibilidadHorarios[i]) { disponibilidadMatutino = false; break; } }
+            for (var i = 10; i <= 19; i++) { if (!disponibilidadHorarios[i]) { disponibilidadVesperino = false; break; } }
+            for (var i = 20; i <= 27; i++) { if (!disponibilidadHorarios[i]) { disponibilidadNocturno = false; break; } }
+
+            // Verificar si el espacio solicitado está pisado
+            var algunIntervaloOcupado = false;
+            for (var k = inicioNuevoIntervalo; k < finNuevoIntervalo; k++) {
+            if (!disponibilidadHorarios[k]) {
+                algunIntervaloOcupado = true;
+                break;
+            }
+            }
+
+            if (algunIntervaloOcupado) {
+            let nombreCapMayuscula = capituloIndividual.toUpperCase();
+            
+            if (!disponibilidadMatutino && !disponibilidadVesperino && !disponibilidadNocturno) {
+                return { disponible: false, msg: `¡SIN DISPONIBILIDAD EN TODO EL DÍA! Ya no es posible reservar en ningún espacio del día debido a que los 3 horarios están ocupados para el capítulo ${nombreCapMayuscula}.`, img: 'https://i.ibb.co/LPTDqcy/AVATAR-NODISPOTODODIA-removebg-preview.png', title: `¡SIN DISPONIBILIDAD EN TODO EL DÍA! 📅` };
+            }
+            if (!disponibilidadMatutino && inicioNuevoIntervalo <= 9) {
+                return { disponible: false, msg: `No hay disponibilidad en el horario matutino para el capítulo ${nombreCapMayuscula}. Prueba cambiar el día, hora o duración.`, img: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', title: `¡SIN DISPONIBILIDAD EN EL HORARIO MATUTINO! 🌤️` };
+            }
+            if (!disponibilidadVesperino && inicioNuevoIntervalo <= 19) {
+                return { disponible: false, msg: `No hay disponibilidad en el horario vespertino para el capítulo ${nombreCapMayuscula}. Prueba cambiar el día, hora o duración.`, img: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', title: `¡SIN DISPONIBILIDAD EN EL HORARIO VESPERTINO! ☀️` };
+            }
+            if (!disponibilidadNocturno) {
+                return { disponible: false, msg: `No hay disponibilidad en el horario nocturno para el capítulo ${nombreCapMayuscula}. Prueba cambiar el día, hora o duración.`, img: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png', title: `¡SIN DISPONIBILIDAD EN EL HORARIO NOCTURNO! 🌕` };
+            }
+            }
+
+            return { disponible: true };
+        });
+        });
+
+        // Resolver todas las consultas en paralelo
+        Promise.all(consultasPromesas).then(function(resultados) {
+        // Buscamos si algún resultado arrojó falta de disponibilidad
+        var conflicto = resultados.find(r => r.disponible === false);
+
+        if (conflicto) {
+            Swal.fire({
+            title: conflicto.title,
+            text: conflicto.msg,
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            allowOutsideClick: true,
+            backdrop: true,
+            allowEscapeKey: true,
+            imageUrl: conflicto.img,
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+            });
+            resolve(false); // Detiene el registro
+        } else {
+            resolve(true); // Todos los capítulos tienen disponibilidad
+        }
+        }).catch(function(error) {
+        console.error("Error al verificar la disponibilidad en cascada:", error);
+        resolve(false);
+        });
+    });
+    }
+
     // Acá está la función para agregar un evento en la colección "reservas" y documento "basededatos",
     // también tiene en cuenta la posibilidad de adjuntar imagen del ponente y reiniciará los campos cuando se registren.
     function agregarEventoFirestore(nombreEvento, claveEvento, fechaEvento, horaEvento, duracionEvento, modalidadEvento, ubicacionPlataforma, lugarPresencial, planEvento, observacionesEvento, nombreOrganizador, emailOrganizador, capitulo, telefonoOrganizador, nombrePonente, emailPonente, telefonoPonente, publicidadComite, observacionesPublicidad, fotoPonenteURL) {
-      // Obtener una referencia a la colección "reservas" en Firestore
-      const db = firebase.firestore().collection("reservas").doc(claveEvento);
+    // Obtener una referencia a la colección "reservas" en Firestore
+    const db = firebase.firestore().collection("reservas").doc(claveEvento);
 
-      db.set({
+    // 1. Definir el capítulo raíz como un String (tomamos la primera posición del array global o el valor convencional)
+    let capituloRaizString = "";
+    if (capituloUsuario === "nacional" || capitulo === "nacional") {
+        capituloRaizString = "nacional";
+    } else {
+        capituloRaizString = arrayCapitulosSeleccionados[0] || capitulo;
+    }
+
+    // 2. Definir el array de capítulos organizadores completo
+    let arrayFinalCapitulos = [];
+    if (capituloUsuario === "nacional" || capitulo === "nacional") {
+        arrayFinalCapitulos = ["nacional"];
+    } else {
+        arrayFinalCapitulos = [...arrayCapitulosSeleccionados];
+    }
+
+    db.set({
         nombreEvento: nombreEvento,
         claveEvento: claveEvento,
         fechaEvento: fechaEvento,
@@ -806,8 +1114,11 @@
         observacionesEvento: observacionesEvento,
         nombreOrganizador: nombreOrganizador,
         emailOrganizador: emailOrganizador,
-        capitulo: capitulo,
-        capitulosOrganizadores: [capitulo],
+        
+        // MODIFICACIONES REQUERIDAS:
+        capitulo: capituloRaizString,                 // String con el primer capítulo elegido
+        capitulosOrganizadores: arrayFinalCapitulos,  // Array nativo con todos los capítulos seleccionados
+        
         telefonoOrganizador: telefonoOrganizador,
         nombrePonente: nombrePonente,
         emailPonente: emailPonente,
@@ -815,44 +1126,42 @@
         publicidadComite: publicidadComite,
         observacionesPublicidad: observacionesPublicidad,
         fotoPonenteURL: fotoPonenteURL,
-        // Agrega aquí los demás campos del evento que deseas guardar
-        // ...
         detractores: 0,
         pasivos: 0,
         promotores: 0,
         satisfaccion: 0,
         crm: "no",
-        tipoEvento:"",
-        areaTrabajo:"",
-        respuestas1:"",
-        respuestas2:"",
-        respuestas3:"",
-        satisfaccion:0,
-        totalAsistentes:0,
-      })
-      .then((docRef) => {
-        // Éxito: el evento se ha registrado correctamente en el documento existente
-        // Aquí puedes agregar cualquier otra lógica que desees después de agregar el evento
-        // Muestra el mensaje de reserva completada
+        tipoEvento: "",
+        areaTrabajo: "",
+        respuestas1: "",
+        respuestas2: "",
+        respuestas3: "",
+        satisfaccion: 0,
+        totalAsistentes: 0,
+    })
+    .then((docRef) => {
+        // Éxito: el evento se ha registrado correctamente
         mostrarMensajeReservar();
-      })
-      .catch((error) => {
+    })
+    .catch((error) => {
         // Error: hubo un problema al registrar el evento
         console.error("ERROR AL REGISTRAR EL EVENTO: ", error);
         Swal.fire({
-          title: '¡ERROR!',
-          text: 'Ha ocurrido un error al registrar el evento. Inténtalo nuevamente más tarde o consulta en el link de dudas, reclamos e inquietudes arriba.',
-          icon: 'error',
-          imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png', // URL de la imagen
-          confirmButtonText: 'Aceptar',
-          imageWidth: 342, // Ancho de la imagen en píxeles
-          imageHeight: 200, // Alto de la imagen en píxeles
-          imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+        title: '¡ERROR!',
+        text: 'Ha ocurrido un error al registrar el evento. Inténtalo nuevamente más tarde o consulta en el link de dudas, reclamos e inquietudes arriba.',
+        icon: 'error',
+        imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+        confirmButtonText: 'Aceptar',
+        imageWidth: 342,
+        imageHeight: 200,
+        imagePosition: 'top-start'
         });
-      });
-    }    
+    });
+    }
 
-    // Esta función genera una clave de evento aleatoria.
+
+
+// Esta función genera una clave de evento aleatoria.
     // La clave tiene siempre una cantidad total de 15 caracteres (letras mayúsculas y dígitos) de forma aleatoria.
     function generarClaveEvento() {
       // Definimos una cadena de caracteres que contendrá letras mayúsculas y dígitos.
@@ -878,12 +1187,11 @@
     }
 
     function registrarEvento() {
+    // Validar que todos los campos estén llenos
+    var camposValidos = validarCamposRegistrarReserva();
 
-      // Validar que todos los campos estén llenos
-      var camposValidos = validarCamposRegistrarReserva();
-
-      // Si todos los campos están llenos, proceder con la reserva
-      if (camposValidos) {
+    // Si todos los campos están llenos, proceder con la reserva
+    if (camposValidos) {
         // Verificar si la fecha del evento es válida (mayor a la fecha actual)
         var fechaEvento = new Date(document.getElementById("fecha-evento").value);
         var horaEvento = new Date(document.getElementById("hora-evento").value);
@@ -902,32 +1210,32 @@
         var emailOrganizador = document.getElementById("email-organizador").value;
         // Verificar si el correo es igual a "aneiap_nacional@aneiap.co"
         if (emailOrganizador === "aneiap_nacional@aneiap.co") {
-          Swal.fire({
+        Swal.fire({
             title: '¡CORREO PROHIBIDO!',
             text: 'El correo aneiap_nacional@aneiap.co no puede ser organizador, recuerda que acá va el correo de quien es el organizador. Por favor, utiliza un correo diferente.',
             icon: 'warning',
             confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        });
+        return;
         }
 
         // Verificar si el correo comienza con "capitulo" o "directivos"
         if (emailOrganizador.toLowerCase().startsWith("capitulo") || emailOrganizador.toLowerCase().startsWith("directivos")) {
-          Swal.fire({
+        Swal.fire({
             title: '¡CORREO PROHIBIDO!',
             text: 'Los correos que comienzan con "capitulo" o "directivos" están prohibidos para ser organizador, recuerda que solo el correo del organizador es lo que se escribe acá. Por favor, utiliza un correo diferente.',
             icon: 'warning',
             confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        });
+        return;
         }
 
         // Verificar si el correo termina con "@aneiap.co"
@@ -937,122 +1245,117 @@
                 text: 'El correo electrónico debe terminar con "@aneiap.co". Por favor, utiliza un correo válido.',
                 icon: 'warning',
                 confirmButtonText: 'Aceptar',
-                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-                imageWidth: 120, // Ancho de la imagen en píxeles
-                imageHeight: 235, // Alto de la imagen en píxeles
-                imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
             });
-            return; // Detener la edición de la reserva
+            return;
         }
 
-        // Verificar que el correo sea de alguien de la jdn cuando se reserve a nivel nacional ya que estos eventos bloquean el calendario de todos los capítulos.
-        var capitulo = document.getElementById("capitulo-organizador").value;
-        if (capitulo === "nacional" && capituloUsuario !== "nacional") {
-          console.log("el usuario quiere reservar a nivel nacional.")
-          Swal.fire({
+        // Evaluar el valor del capítulo para permisos nacionales
+        var capituloInput = document.getElementById("capitulo-organizador").value;
+        if (capituloInput === "nacional" && capituloUsuario !== "nacional") {
+        console.log("el usuario quiere reservar a nivel nacional.")
+        Swal.fire({
             title: '¡NO TIENES PERMISOS PARA RESERVAR A NIVEL NACIONAL!',
             text: 'Solo los homólogos nacionales (junta nacional) tienen permiso para reservar a nivel nacional, si deseas hacer una reserva nacional, contáctate con ellos.',
             icon: 'warning',
             confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        });
+        return;
         }
 
         // Validación de datos para que la fecha con la que se registrará el evento sea mayor a la de hoy.
         if ((fechaEvento < fechaActual) || (fechaEvento < fechaActualISOS)) {
-          Swal.fire({
+        Swal.fire({
             title: '¡FECHA INCORRECTA!',
             text: 'Debes reservar al menos con UN (1) día de anticipación, debes reiniciar la plataforma y volver a llenar la información, si ya se venció el plazo y deseas hacerlo igualmente, contacta al administrador.',
             icon: 'warning',
             confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener el registro del evento
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        });
+        return;
         }
 
-        // Verificar el formato del teléfono del organizador (debe empezar por 3 y tener 10 dígitos)
+        // Verificar el formato del teléfono del organizador
         var telefonoOrganizador = document.getElementById("telefono-organizador").value;
         var telefonoOrganizadorRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
-        // Validación de datos para que el teléfono del organizador efectivamente sea un celular válido.
         if (!telefonoOrganizadorRegex.test(telefonoOrganizador)) {
-          Swal.fire({
+        Swal.fire({
             title: '¡TELÉFONO DEL ORGANIZADOR INCORRECTO!',
             text: 'Digita un número de teléfono válido.',
             icon: 'warning',
             confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener el registro del evento
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        });
+        return;
         }
 
         // Verificar el formato del teléfono del ponente (si fue diligenciado)
         var telefonoPonente = document.getElementById("telefono-ponente").value;
-        // En caso de haber diligenciado el teléfono del ponente, valida que sea una celular válido.
         if (telefonoPonente !== "") {
-          var telefonoPonenteRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
+        var telefonoPonenteRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
-          if (!telefonoPonenteRegex.test(telefonoPonente)) {
+        if (!telefonoPonenteRegex.test(telefonoPonente)) {
             Swal.fire({
-              title: '¡TELÉFONO DEL PONENTE INCORRECTO!',
-              text: 'Digita un número de teléfono válido.',
-              icon: 'warning',
-              confirmButtonText: 'Aceptar',
-              imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+            title: '¡TELÉFONO DEL PONENTE INCORRECTO!',
+            text: 'Digita un número de teléfono válido.',
+            icon: 'warning',
+            confirmButtonText: 'Aceptar',
+            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
             });
-            return; // Detener el registro del evento
-          }
+            return;
+        }
         }
 
-          // Obtener el enlace del usuario
-          var enlaceGoogleDrive = document.getElementById("foto-ponente").value;
-          // Expresión regular para verificar el formato del enlace de Google Drive
-          var enlaceGoogleDriveRegex = /^https:\/\/drive\.google\.com\/.*$/;
-          var publicidadComite = document.getElementById("publicidad-comite").value
+        // Obtener el enlace de la foto del ponente
+        var enlaceGoogleDrive = document.getElementById("foto-ponente").value;
+        var enlaceGoogleDriveRegex = /^https:\/\/drive\.google\.com\/.*$/;
+        var publicidadComite = document.getElementById("publicidad-comite").value
 
-          // Validar el enlace utilizando la expresión regular
-          if (publicidadComite === "si") {
-          if (enlaceGoogleDrive !== "") {
-          if (!enlaceGoogleDriveRegex.test(enlaceGoogleDrive)) {
+        // Validar el enlace utilizando la expresión regular
+        if (publicidadComite === "si") {
+        if (enlaceGoogleDrive !== "") {
+            if (!enlaceGoogleDriveRegex.test(enlaceGoogleDrive)) {
             Swal.fire({
-              title: "¡ENLACE INVÁLIDO!",
-              text: "Por favor, ingresa un enlace de Google Drive válido para la foto del ponente.",
-              icon: "warning",
-              confirmButtonText: 'Aceptar',
-              imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+                title: "¡ENLACE INVÁLIDO!",
+                text: "Por favor, ingresa un enlace de Google Drive válido para la foto del ponente.",
+                icon: "warning",
+                confirmButtonText: 'Aceptar',
+                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
             });
-            return; // Detener el registro del evento
+            return;
             }
-          }
+        }
+        }
 
-          }
-
-        // Si todas las verificaciones son exitosas, continuar con el registro del evento
-        //PRIMERO VERIFICA QUE HAYA DISPONIBILIDAD PARA CUANDO INGRESÓ LA FECHA, HORA Y DURACIÓN
+        // Ejecutar la validación en cascada de disponibilidad
         verificarDisponibilidadRegistro().then(function(result) {
-          if (!result) {
-          // Si no se muestra ningún swal.fire, ejecuta el código a continuación
-          } else {
-            // Generar clave evento aleatoria de 10 caracteres (mayúsculas y números)
+        if (!result) {
+            // Si no hay disponibilidad, se detiene el flujo (el Swal se lanza dentro de la verificación)
+        } else {
+            // Generar clave evento aleatoria
             var claveEvento = generarClaveEvento();
-            // ACÁ EMPIEZA EL PROCESO PARA INSERTAR LA DATA EN LA BASE DE DATOS.
-            // Obtenemos todos los campos individualmente
+            
+            // Extraer campos restantes
             var nombreEvento = document.getElementById("nombre-evento").value;
             var fechaEvento = document.getElementById("fecha-evento").value;
             var horaEvento = document.getElementById("hora-evento").value;
@@ -1064,7 +1367,6 @@
             var observacionesEvento = document.getElementById("observaciones-evento").value;
             var nombreOrganizador = document.getElementById("nombre-organizador").value;
             var emailOrganizador = document.getElementById("email-organizador").value;
-            var capitulo = document.getElementById("capitulo-organizador").value;
             var telefonoOrganizador = document.getElementById("telefono-organizador").value;
             var nombrePonente = document.getElementById("nombre-ponente").value;
             var emailPonente = document.getElementById("email-ponente").value;
@@ -1073,47 +1375,47 @@
             var observacionesPublicidad = document.getElementById("observaciones-publicidad").value;
             var fotoPonenteURL = document.getElementById("foto-ponente").value;
 
-            if (publicidadComite === "si") {
-              // Mostrar swal.fire para que el usuario seleccione la opción de publicidad
-              swal.fire({
-                  title: '¿Desea enviar la solicitud de publicidad a nivel nacional o capitular?',
-                  showDenyButton: true,
-                  showCloseButton: false, // Oculta el botón de cerrar
-                  allowOutsideClick: false, // Impide cerrar haciendo clic afuera
-                  confirmButtonText: `Nacional`,
-                  denyButtonText: `Capitular`,
-              }).then((result) => {
-                  if (result.isConfirmed) {
-                      // Si el usuario elige enviar a nivel nacional
-                      console.log("El usuario seleccionó publicidad a nivel nacional.");
-                      enviarSolicitudPublicidadRegistroEmailJS(claveEvento, "si");
-                      agregarEventoFirestore(nombreEvento, claveEvento, fechaEvento, horaEvento, duracionEvento, modalidadEvento, ubicacionPlataforma, lugarPresencial, planEvento, observacionesEvento, nombreOrganizador, emailOrganizador, capitulo, telefonoOrganizador, nombrePonente, emailPonente, telefonoPonente, publicidadComite, observacionesPublicidad, fotoPonenteURL);
-                      console.log("Llamando a enviarCorreoRegistroEmailJS para publicidad nacional.");
-                      enviarCorreoRegistroEmailJS(claveEvento);
-                  } else if (result.isDenied) {
-                      // Si el usuario elige enviar a nivel capitular
-                      console.log("El usuario seleccionó publicidad a nivel capitular.");
-                      enviarSolicitudPublicidadRegistroEmailJS(claveEvento, "no");
-                      console.log("Terminando de llamar a enviarCorreoRegistroEmailJS para publicidad capitular.");
-                      agregarEventoFirestore(nombreEvento, claveEvento, fechaEvento, horaEvento, duracionEvento, modalidadEvento, ubicacionPlataforma, lugarPresencial, planEvento, observacionesEvento, nombreOrganizador, emailOrganizador, capitulo, telefonoOrganizador, nombrePonente, emailPonente, telefonoPonente, publicidadComite, observacionesPublicidad, fotoPonenteURL);
-                      console.log("Llamando a enviarCorreoRegistroEmailJS para publicidad capitular.");
-                      enviarCorreoRegistroEmailJS(claveEvento);
-                  }
-              });
-            } else {
-              console.log("No se solicitó publicidad, se procede a enviar el correo de confirmación directamente.");
-              agregarEventoFirestore(nombreEvento, claveEvento, fechaEvento, horaEvento, duracionEvento, modalidadEvento, ubicacionPlataforma, lugarPresencial, planEvento, observacionesEvento, nombreOrganizador, emailOrganizador, capitulo, telefonoOrganizador, nombrePonente, emailPonente, telefonoPonente, publicidadComite, observacionesPublicidad, fotoPonenteURL);
-              console.log("Llamando a enviarCorreoRegistroEmailJS sin publicidad.");
-              enviarCorreoRegistroEmailJS(claveEvento);
-            }
+            // --- AJUSTE INTELIGENTE PARA EL PARÁMETRO CAPITULO EN FIRESTORE ---
+            // Si el valor del select es "multi", tomamos el primer índice del array, de lo contrario usamos el valor directo.
+            var selectElement = document.getElementById("capitulo-organizador");
+            var capituloParaFirestore = selectElement.value === "multi" ? (arrayCapitulosSeleccionados[0] || "") : selectElement.value;
 
-          }
+            if (publicidadComite === "si") {
+            swal.fire({
+                title: '¿Desea enviar la solicitud de publicidad a nivel nacional o capitular?',
+                showDenyButton: true,
+                showCloseButton: false,
+                allowOutsideClick: false,
+                confirmButtonText: `Nacional`,
+                denyButtonText: `Capitular`,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    console.log("El usuario seleccionó publicidad a nivel nacional.");
+                    enviarSolicitudPublicidadRegistroEmailJS(claveEvento, "si");
+                    agregarEventoFirestore(nombreEvento, claveEvento, fechaEvento, horaEvento, duracionEvento, modalidadEvento, ubicacionPlataforma, lugarPresencial, planEvento, observacionesEvento, nombreOrganizador, emailOrganizador, capituloParaFirestore, telefonoOrganizador, nombrePonente, emailPonente, telefonoPonente, publicidadComite, observacionesPublicidad, fotoPonenteURL);
+                    console.log("Llamando a enviarCorreoRegistroEmailJS para publicidad nacional.");
+                    enviarCorreoRegistroEmailJS(claveEvento);
+                } else if (result.isDenied) {
+                    console.log("El usuario seleccionó publicidad a nivel capitular.");
+                    enviarSolicitudPublicidadRegistroEmailJS(claveEvento, "no");
+                    agregarEventoFirestore(nombreEvento, claveEvento, fechaEvento, horaEvento, duracionEvento, modalidadEvento, ubicacionPlataforma, lugarPresencial, planEvento, observacionesEvento, nombreOrganizador, emailOrganizador, capituloParaFirestore, telefonoOrganizador, nombrePonente, emailPonente, telefonoPonente, publicidadComite, observacionesPublicidad, fotoPonenteURL);
+                    console.log("Llamando a enviarCorreoRegistroEmailJS para publicidad capitular.");
+                    enviarCorreoRegistroEmailJS(claveEvento);
+                }
+            });
+            } else {
+            console.log("No se solicitó publicidad, se procede a enviar el correo de confirmación directamente.");
+            agregarEventoFirestore(nombreEvento, claveEvento, fechaEvento, horaEvento, duracionEvento, modalidadEvento, ubicacionPlataforma, lugarPresencial, planEvento, observacionesEvento, nombreOrganizador, emailOrganizador, capituloParaFirestore, telefonoOrganizador, nombrePonente, emailPonente, telefonoPonente, publicidadComite, observacionesPublicidad, fotoPonenteURL);
+            console.log("Llamando a enviarCorreoRegistroEmailJS sin publicidad.");
+            enviarCorreoRegistroEmailJS(claveEvento);
+            }
+        }
         }).catch(function(error) {
-            // Maneja cualquier error que pueda ocurrir durante la verificación
             console.error("Error al verificar la disponibilidad:", error);
         }); 
-        }
     }
+    }
+
 
     // Esta función permite la acción de mostrar un mensaje de éxito al momento de registrar una reserva.        
     function mostrarMensajeReservar() {
@@ -1229,42 +1531,66 @@
       return true; // Todos los campos están llenos
     }
 
-    function obtenerCorreoRegistrar(correoElectronico, capitulo) {
+    function obtenerCorreoRegistrar(correoElectronico, capituloIgnorado) {
         // Banco de correos asociados a cada capítulo
         const bancoCorreos = {
             uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
-            unimagdalena: "academico_unimagdalena@aneiap.co",
+            unimagdalena: "academico_unimagdalena@aneiap.co, interventoria_unimagdalena@aneiap.co",
             usasm: "academico_usasm@aneiap.co, interventoria_usasm@aneiap.co",
             unicaribe: "academico_unicaribe@aneiap.co, interventoria_unicaribe@aneiap.co",
-            uniatlantico: "academico_uniatlantico@aneiap.co",
+            uniatlantico: "academico_uniatlantico@aneiap.co, interventoria_uniatlantico@aneiap.co",
             uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
             unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
             cuc: "academico_cuc@aneiap.co, interventoria_cuc@aneiap.co",
-            librequilla: "academico_librequilla@aneiap.co",
-            utb: "academico_utb@aneiap.co",
+            librequilla: "academico_librequilla@aneiap.co, interventoria_librequilla@aneiap.co",
+            utb: "academico_utb@aneiap.co, interventoria_utb@aneiap.co",
             upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
             unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
             ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
-            unalmed: "academico_unalmed@aneiap.co",
-            udea: "academico_udea@aneiap.co",
-            upbmed: "academico_upbmed@aneiap.co",
+            unalmed: "academico_unalmed@aneiap.co, interventoria_unalmed@aneiap.co",
+            udea: "academico_udea@aneiap.co, interventoria_udea@aneiap.co",
+            upbmed: "academico_upbmed@aneiap.co, interventoria_upbmed@aneiap.co",
             utp: "academico_utp@aneiap.co, interventoria_utp@aneiap.co",
             unalma: "academico_unalma@aneiap.co, interventoria_unalma@aneiap.co",
-            udistrital: "academico_udistrital@aneiap.co",
-            unalbog: "academico_unalbog@aneiap.co",
-            univalle: "academico_univalle@aneiap.co",
-            icesi: "academico_icesi@aneiap.co",
+            udistrital: "academico_udistrital@aneiap.co, interventoria_udistrital@aneiap.co",
+            unalbog: "academico_unalbog@aneiap.co, interventoria_unalbog@aneiap.co",
+            univalle: "academico_univalle@aneiap.co, interventoria_univalle@aneiap.co",
+            icesi: "academico_icesi@aneiap.co, interventoria_icesi@aneiap.co",
             uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
             usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
             nacional: "academico@aneiap.co, interventoria@aneiap.co"
         };
 
-        // Correo de usuario y correos asociados al capítulo
-        const correosUsuario = correoElectronico ? correoElectronico + ", " : "";
-        const correosCapitulo = bancoCorreos[capitulo.toLowerCase()] || "";
+        let listaDestinatarios = [];
 
-        // Devolver todos los correos concatenados
-        return correosUsuario + correosCapitulo;
+        // 1. Añadir el correo del organizador principal si existe
+        if (correoElectronico) {
+            listaDestinatarios.push(correoElectronico.trim());
+        }
+
+        // 2. Si el array global de capítulos está vacío pero hay un valor monocapítulo en el select, lo usamos
+        let capitulosAEvaluar = [...arrayCapitulosSeleccionados];
+        if (capitulosAEvaluar.length === 0) {
+            var selectElement = document.getElementById("capitulo-organizador");
+            if (selectElement && selectElement.value && selectElement.value !== "multi") {
+                capitulosAEvaluar = [selectElement.value];
+            }
+        }
+
+        // 3. Recorrer todos los capítulos seleccionados y extraer sus correos de académico e interventoría
+        capitulosAEvaluar.forEach(function(cap) {
+            let correosCapitulo = bancoCorreos[cap.toLowerCase()];
+            if (correosCapitulo) {
+                correosCapitulo.split(",").forEach(function(correo) {
+                    let correoLimpio = correo.trim();
+                    if (!listaDestinatarios.includes(correoLimpio)) {
+                        listaDestinatarios.push(correoLimpio);
+                    }
+                });
+            }
+        });
+
+        return listaDestinatarios.join(", ");
     }
 
     // Función para enviar el correo de edición de reserva
@@ -1398,17 +1724,22 @@
     // Función para enviar el correo de confirmación de registro de la reserva usando EmailJS
     function enviarCorreoRegistroEmailJS(claveReservaCreada) {
         emailjs.init("2vq1EFo6RmswvD4Ey");
-        console.log("Función enviarCorreoRegistroEmailJS llamada");
+        console.log("Función enviarCorreoRegistroEmailJS llamada con lógica unificada");
 
         const correoOrganizador = document.getElementById("email-organizador").value;
-        const capitulo = document.getElementById("capitulo-organizador").value;
-        const destinatario = obtenerCorreoRegistrar(correoOrganizador, capitulo) + ", siea@aneiap.co";;
+        
+        // Obtener los destinatarios académicos unificados + copia a siea@aneiap.co
+        const destinatario = obtenerCorreoRegistrar(correoOrganizador) + ", siea@aneiap.co";
 
         const subject = `Confirmación de registro de reserva - Clave: ${claveReservaCreada}`;
         const modalidad = document.getElementById("modalidad-evento").value;
         const ubicacionOPlataforma = modalidad === "virtual" ? 
             document.getElementById("ubicacion-plataforma").value || "" : 
             document.getElementById("lugar-presencial").value || "";
+
+        // Obtener el texto visible del selector para el cuerpo del correo (ej: "UNINORTE, UTP")
+        var selectElement = document.getElementById("capitulo-organizador");
+        const textoCapitulosVisual = selectElement.selectedIndex !== -1 ? selectElement.options[selectElement.selectedIndex].text : "";
 
         // Verificar URL de la foto del ponente
         const fotoPonenteURL = document.getElementById("foto-ponente").value || "";
@@ -1427,7 +1758,7 @@
             duracionEvento: `${Math.floor(document.getElementById("duracion-evento").value / 60)} hora(s) ${document.getElementById("duracion-evento").value % 60} minuto(s)`,
             planEvento: document.getElementById("plan-evento").value || "",
             observacionesReserva: document.getElementById("observaciones-evento").value || "No se especificaron observaciones.",
-            capitulo: capitulo || "",
+            capitulo: textoCapitulosVisual || "",
             modalidadReserva: modalidad || "",
             ubicacionOPlataforma: ubicacionOPlataforma,
             nombrePonente: document.getElementById("nombre-ponente").value || "",
@@ -1438,7 +1769,6 @@
             mensajeFinal: "Recuerde que todas las claves son personales e intransferibles, no las comparta con nadie. 💙💚",
             despedida: "Cordialmente, Alessandro Villanueva Cantillo - Administrador y creador SIEA",
             to_email: destinatario,
-            //to_email: "avillanuevacantillo@gmail.com",
             subject: subject
         };
 
@@ -1592,7 +1922,7 @@
         });
     }
 
-    function escogerCorreoDestino(capitulo, escogioPublicidadNacional, correoOrganizador) {
+    function escogerCorreoDestino(capituloIgnorado, escogioPublicidadNacional, correoOrganizador) {
         // Banco de correos asociados a cada capítulo
         const bancoCorreos = {
             uniguajira: "comunicaciones_uniguajira@aneiap.co",
@@ -1622,24 +1952,39 @@
             nacional: "proy_diseno_nacional@aneiap.co"
         };
 
-        // Obtener el correo de destino dependiendo de la elección del usuario
-        let correoDestino = "";
-        if (escogioPublicidadNacional === "no") {
-            // Obtener el correo del comité de piezas publicitarias del capítulo
-            correoDestino = bancoCorreos[capitulo.toLowerCase()] || "";
-        } else if (escogioPublicidadNacional === "si") {
-            // Enviar la solicitud al comité de piezas publicitarias nacional
-            correoDestino = "proy_diseno_nacional@aneiap.co";
-        }
+        let listaDestinos = [];
 
-        // Añadir el correo del organizador como destinatario
-        if (correoDestino) {
-            correoDestino = `${correoOrganizador}, ${correoDestino}`;
+        // 1. Evaluar si va para nacional o si recorre los capítulos seleccionados
+        if (escogioPublicidadNacional === "si") {
+            listaDestinos.push("proy_diseno_nacional@aneiap.co");
         } else {
-            correoDestino = correoOrganizador; // Solo el organizador si no hay correo del capítulo
+            let capitulosAEvaluar = [...arrayCapitulosSeleccionados];
+            if (capitulosAEvaluar.length === 0) {
+                var selectElement = document.getElementById("capitulo-organizador");
+                if (selectElement && selectElement.value && selectElement.value !== "multi") {
+                    capitulosAEvaluar = [selectElement.value];
+                }
+            }
+
+            capitulosAEvaluar.forEach(function(cap) {
+                let correoComs = bancoCorreos[cap.toLowerCase()];
+                if (correoComs) {
+                    correoComs.split(",").forEach(function(correo) {
+                        let correoLimpio = correo.trim();
+                        if (!listaDestinos.includes(correoLimpio)) {
+                            listaDestinos.push(correoLimpio);
+                        }
+                    });
+                }
+            });
         }
 
-        return correoDestino;
+        // 2. Colocar al organizador de primero en la cadena de envíos
+        if (correoOrganizador) {
+            listaDestinos.unshift(correoOrganizador.trim());
+        }
+
+        return listaDestinos.join(", ");
     }
 
     //ALESSANDRO
@@ -1648,18 +1993,23 @@
         emailjs.init("2vq1EFo6RmswvD4Ey");
 
         const correoOrganizador = document.getElementById("email-organizador").value;
-        const capitulo = document.getElementById("capitulo-organizador").value;
-        const correoDestino = escogerCorreoDestino(capitulo, escogioPublicidadNacional, correoOrganizador);
+        
+        // El primer parámetro se ignora internamente porque la función ahora usa el array global
+        const correoDestino = escogerCorreoDestino(null, escogioPublicidadNacional, correoOrganizador) + ", siea@aneiap.co";
+
         const subject = `Solicitud de Publicidad para el Espacio - "${document.getElementById("nombre-evento").value}" con clave de reserva terminada en ***********${claveReservaCreada.slice(-4)}`;
         const modalidad = document.getElementById("modalidad-evento").value;
         const ubicacionOPlataforma = modalidad === "presencial" ? 
             document.getElementById("lugar-presencial").value || "" : 
             document.getElementById("ubicacion-plataforma").value || "";
 
+        // Obtener el texto de los capítulos para la plantilla de publicidad
+        var selectElement = document.getElementById("capitulo-organizador");
+        const textoCapitulosVisual = selectElement.selectedIndex !== -1 ? selectElement.options[selectElement.selectedIndex].text : "";
+
         // Verificar URL de la foto del ponente
         const fotoPonenteURL = document.getElementById("foto-ponente").value.trim();
         const fotoPonenteTexto = fotoPonenteURL ? "Link de la foto del ponente: " : "";
-        // Log para verificar el valor de fotoPonenteURL
         console.log("Foto Ponente URL:", fotoPonenteURL);
 
         // Parámetros para la plantilla de solicitud de publicidad
@@ -1675,7 +2025,7 @@
             duracionEvento: `${Math.floor(document.getElementById("duracion-evento").value / 60)} hora(s) ${document.getElementById("duracion-evento").value % 60} minuto(s)`,
             planEvento: document.getElementById("plan-evento").value || "",
             observacionesReserva: document.getElementById("observaciones-evento").value || "No se especificaron observaciones.",
-            capitulo: capitulo || "",
+            capitulo: textoCapitulosVisual || "",
             modalidadReserva: modalidad || "",
             ubicacionOPlataforma: ubicacionOPlataforma,
             nombrePonente: document.getElementById("nombre-ponente").value || "",
@@ -1686,11 +2036,9 @@
             mensajeFinal: "Por favor, revise esta solicitud y proporcione detalles sobre la publicidad requerida.",
             despedida: "Atentamente, organizadores del espacio.",
             to_email: correoDestino,
-            //to_email: "avillanuevacantillo@gmail.com",
             subject: subject
         };
 
-        // Log para verificar los parámetros enviados
         console.log("Params enviados a emailjs PUBLICIDAD:", params);
 
         emailjs.send("siea_6zoabdr", "registro_reservas", params)
@@ -1704,245 +2052,6 @@
             });
     }
 
-    function verificarDisponibilidadRegistro() {
-      return new Promise((resolve, reject) => {
-        var disponibilidadHorarios = Array(28).fill(true); // Inicialmente, todos los intervalos están disponibles
-    
-        // var claveEvento = document.getElementById("clave-evento").value; // ya no es necesario esto
-        var nuevaFecha = document.getElementById("fecha-evento").value;
-        var nuevaHora = Number(document.getElementById("hora-evento").value);
-        var nuevaDuracion = Number(document.getElementById("duracion-evento").value);
-        var nuevoCapitulo = document.getElementById("capitulo-organizador").value;
-    
-        // Validación de datos para que la fecha con la que se registrará el evento sea mayor a la de hoy.
-        if (nuevaDuracion + nuevaHora > 1321) {
-          Swal.fire({
-            title: '¡ESTÁS INTENTANDO RESERVAR DESPUÉS DE LAS 22:00 (10PM)!',
-            text: 'El evento debe estar programado para finalizar a más tardar hasta las 22:00, ve a la duración del mismo y edítala de tal forma que no se excedan las 22:00 (10pm)',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
-            imageWidth: 120,
-            imageHeight: 235,
-            imagePosition: 'top-start'
-          });
-          resolve(false);
-          return; // Detener el registro del evento
-        }
-    
-        // Realiza una consulta a la base de datos para obtener las reservas en la nueva fecha
-        var reservasRef = firebase.firestore().collection("reservas");
-        var consulta;
-    
-        // Primera consulta: Filtrar por "fechaEvento" igual a "nuevaFecha"
-        if (nuevoCapitulo === "nacional") {
-          // Si se seleccionó "ANEIAP NACIONAL", consultar solo las reservas para toda la Asociación
-          consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "==", "nacional");
-        } else {
-          // Consultar las reservas para el capítulo seleccionado y para toda la Asociación (ANEIAP NACIONAL)
-          consulta = reservasRef.where("fechaEvento", "==", nuevaFecha).where("capitulo", "in", [nuevoCapitulo, "nacional"]);
-        }
-    
-        // Realizar el filtrado para obtener intervalos disponibles y no disponibles
-        consulta.get().then(function(querySnapshot) {
-          console.log("entramos a hacer consulta");
-    
-          // Ciclo para revisar cada evento reservado para la nueva fecha
-          querySnapshot.forEach(function(doc) {
-            var data = doc.data();
-    
-            // ---------- FILTRO ADICIONAL ----------
-            // Ignorar (no marcar como ocupados) los eventos que sean:
-            // capitulo === "nacional"  &&  tipoEvento === "escuela-directores"
-            if (data && data.capitulo === "nacional" && data.tipoEvento === "escuela-directores") {
-              console.log("Ignorando (escuela-directores nacional) doc:", doc.id);
-              return; // saltar este documento
-            }
-            // ---------------------------------------
-    
-            console.log("este es el doc: " + doc.id);
-            var horaEvento = Number(data.horaEvento); // Hora en minutos (ej. 540 para 09:00)
-            var duracionEvento = Number(data.duracionEvento); // Duración en minutos (ej. 120 para 2 horas)
-            console.log("hora del evento con clave: " + data.claveEvento + ": " + horaEvento);
-            console.log("duracion del evento con clave: " + data.claveEvento + ": " + duracionEvento);
-            // Calcular los índices de inicio y fin del intervalo que ocupará el evento
-            var inicioIntervalo = Math.floor((horaEvento - 480) / 30);
-            var finIntervalo = inicioIntervalo + Math.floor(duracionEvento / 30);
-            console.log("inicio intervalo: " + inicioIntervalo);
-            console.log("fin intervalo: " + finIntervalo);
-    
-            // Asegurar límites válidos
-            inicioIntervalo = Math.max(0, inicioIntervalo);
-            finIntervalo = Math.min(28, finIntervalo);
-    
-            // Marcar los intervalos como ocupados en el arreglo de disponibilidad
-            for (var i = inicioIntervalo; i < finIntervalo; i++) {
-              disponibilidadHorarios[i] = false;
-            }
-            console.log("estas son las disponibilidades de los intervalos:");
-            console.log(disponibilidadHorarios);
-          });
-    
-          // Calcula los índices de inicio y fin de los intervalos para la nueva hora y duración
-          var inicioNuevoIntervalo = Math.floor((nuevaHora - 480) / 30);
-          var finNuevoIntervalo = inicioNuevoIntervalo + Math.floor(nuevaDuracion / 30);
-    
-          // Asegurar límites válidos
-          inicioNuevoIntervalo = Math.max(0, inicioNuevoIntervalo);
-          finNuevoIntervalo = Math.min(28, finNuevoIntervalo);
-    
-          var disponibilidadMatutino = true;
-          var disponibilidadVesperino = true;
-          var disponibilidadNocturno = true;
-    
-          // Colocar los intervalos de un mismo paquete horario (matutino, vesperino o nocturno) ocupados
-          // Verificar el paquete horario matutino (intervalos 0 al 9, es decir, 8:00 a 13:00)
-          for (var i = 0; i <= 9; i++) {
-            if (!disponibilidadHorarios[i]) {
-              for (var j = 0; j <= 9; j++) {
-                disponibilidadHorarios[j] = false;
-              }
-              disponibilidadMatutino = false;
-              break; // Al menos un intervalo está ocupado, salir del ciclo
-            }
-          }
-    
-          // Verificar el paquete horario vespertino (intervalos 10 al 19, es decir, 13:00 a 18:00)
-          for (var i = 10; i <= 19; i++) {
-            if (!disponibilidadHorarios[i]) {
-              for (var j = 10; j <= 19; j++) {
-                disponibilidadHorarios[j] = false;
-              }
-              disponibilidadVesperino = false;
-              break; // Al menos un intervalo está ocupado, salir del ciclo
-            }
-          }
-    
-          // Verificar el paquete horario nocturno (intervalos 20 al 27, es decir, 18:00 a 22:00)
-          for (var i = 20; i <= 27; i++) {
-            if (!disponibilidadHorarios[i]) {
-              for (var j = 20; j <= 27; j++) {
-                disponibilidadHorarios[j] = false;
-              }
-              disponibilidadNocturno = false;
-              break; // Al menos un intervalo está ocupado, salir del ciclo
-            }
-          }
-    
-          // Verifica si alguno de los nuevos intervalos está ocupado
-          var algunIntervaloOcupado = false;
-          for (var k = inicioNuevoIntervalo; k < finNuevoIntervalo; k++) {
-            console.log("esta es la disponibilidad del intervalo " + k + ": " + disponibilidadHorarios[k]);
-            if (!disponibilidadHorarios[k]) {
-              console.log("está ocupado el intervalo " + k);
-              algunIntervaloOcupado = true;
-              break; // Si uno está ocupado, no es necesario verificar los demás
-            }
-          }
-    
-          if (algunIntervaloOcupado) {
-            // Al menos uno de los intervalos no está disponible
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar TODO EL DÍA ocupado
-            if (!disponibilidadMatutino && !disponibilidadVesperino && !disponibilidadNocturno) {
-              Swal.fire({
-                title: '¡SIN DISPONIBILIDAD EN TODO EL DÍA! 📅',
-                text: 'Ya no es posible reservar en ningún espacio del día debido a que los 3 horarios para este día están ocupados. Prueba a consultar la disponibilidad en la sección azul y escoger otro día.',
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-                allowOutsideClick: true,
-                backdrop: true,
-                allowEscapeKey: true,
-                imageUrl: 'https://i.ibb.co/LPTDqcy/AVATAR-NODISPOTODODIA-removebg-preview.png',
-                imageWidth: 120,
-                imageHeight: 235,
-                imagePosition: 'top-start'
-              });
-              resolve(false);
-              return; // Detener la ejecución de la función
-            }
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario matutino.
-            if (!disponibilidadMatutino && inicioNuevoIntervalo <= 9) {
-              Swal.fire({
-                title: '¡SIN DISPONIBILIDAD EN EL HORARIO MATUTINO! 🌤️',
-                text: 'El horario matutino ya está ocupado (8:00 a 13:00). Prueba cambiar el día, hora o duración.',
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-                allowOutsideClick: true,
-                backdrop: true,
-                allowEscapeKey: true,
-                imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
-                imageWidth: 120,
-                imageHeight: 235,
-                imagePosition: 'top-start'
-              });
-              resolve(false);
-              return; // Detener la ejecución de la función
-            }
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario vespertino.
-            if (!disponibilidadVesperino && inicioNuevoIntervalo <= 19) {
-              Swal.fire({
-                title: '¡SIN DISPONIBILIDAD EN EL HORARIO VESPERTINO! ☀️',
-                text: 'El horario vespertino ya está ocupado (13:00 a 18:00). Prueba cambiar el día, hora o duración.',
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-                allowOutsideClick: true,
-                backdrop: true,
-                allowEscapeKey: true,
-                imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
-                imageWidth: 120,
-                imageHeight: 235,
-                imagePosition: 'top-start'
-              });
-              resolve(false);
-              return; // Detener la ejecución de la función
-            }
-            // Mostrar alerta al usuario con SweetAlert2 en caso de estar ocupado el horario nocturno.
-            if (!disponibilidadNocturno) {
-              Swal.fire({
-                title: '¡SIN DISPONIBILIDAD EN EL HORARIO NOCTURNO! 🌕',
-                text: 'El horario nocturno ya está ocupado (18:00 a 22:00). Prueba cambiar el día, hora o duración.',
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-                allowOutsideClick: true,
-                backdrop: true,
-                allowEscapeKey: true,
-                imageUrl: 'https://i.ibb.co/4p0C8SC/AVATAR-HORARIOSNODISPO-removebg-preview.png',
-                imageWidth: 120,
-                imageHeight: 235,
-                imagePosition: 'top-start'
-              });
-              resolve(false);
-              return; // Detener la ejecución de la función
-            }
-          } else {
-            // Todos los intervalos están disponibles
-            // Realiza la edición de la reserva
-            // ...
-            resolve(true); // Resolver la promesa con 'true' si todos los intervalos están disponibles
-            return;
-          }
-        }).catch(function(error) {
-          Swal.fire({
-            title: '¡ERROR DE CONSULTA!',
-            text: 'Ocurrió un error al obtener las reservas. Por favor, inténtalo de nuevo más tarde o comunícate con el creador de la plataforma.',
-            icon: 'error',
-            confirmButtonText: 'Aceptar',
-            allowOutsideClick: true,
-            backdrop: true,
-            allowEscapeKey: true,
-            imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
-            imageWidth: 120,
-            imageHeight: 235,
-            imagePosition: 'top-start'
-          });
-          console.log(error);
-          resolve(false); // Resolver la promesa con 'false' en caso de error
-          return;
-        });
-      });
-    }
-
-    
     function iniciarSesionJDN() {
         Swal.fire({
             title: 'Validación requerida',
@@ -1996,13 +2105,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
