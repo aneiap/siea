@@ -1325,11 +1325,12 @@
               imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png', // URL de la imagen
               imageWidth: 120, // Ancho de la imagen en píxeles
               imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+              imagePosition: 'top-start' // Posición de la imagen
           });
           return; // Detener el proceso de evaluación
       }
-        // Obtener los valores de los campos
+      
+      // Obtener los valores de los campos
       var nombreAsistente = document.getElementById("nombre-asistente").value;
       var telefonoAsistente = document.getElementById("telefono-asistente").value;
       var correoAsistente = document.getElementById("correo-asistente").value;
@@ -1337,7 +1338,14 @@
       var pregunta1 = document.getElementById("pregunta1").value;
       var pregunta2 = document.getElementById("pregunta2").value;
       var pregunta3 = document.getElementById("pregunta3").value;
-      var comentarios = document.getElementById("pregunta4").value;
+      
+      // --- CAPTURA Y FILTRADO PREVENTIVO DE EMOJIS ---
+      var comentariosRaw = document.getElementById("pregunta4").value;
+      // Expresión regular Unicode para capturar y omitir emojis sin dañar letras, tildes, números ni puntuación
+      const regexEmojis = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1F004}\u{1F0CF}\u{1F170}-\u{1F251}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2b50}\u{2b55}]/gu;
+      
+      // Guardamos el comentario completamente limpio de emojis
+      var comentarios = comentariosRaw.replace(regexEmojis, "");
 
       // Validar la longitud de comentarios
       if (comentarios.length > 100) {
@@ -1364,14 +1372,14 @@
           imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
           imageWidth: 120, // Ancho de la imagen en píxeles
           imageHeight: 235, // Alto de la imagen en píxeles
-          imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+          imagePosition: 'top-start' // Posición de la imagen
         });
-        return; // Detener la operación actual, como el envío de un formulario o la continuación de un proceso
+        return; // Detener la operación actual
       }
       
       var reservasRef = firebase.firestore().collection("reservas");
       var eventoRef = reservasRef.where("capitulosOrganizadores", "array-contains", capituloEspacio).where("nombreEvento", "==", nombreEspacio)
-                                 .where("fechaEvento", ">=", fechaTresSemanasAtras).where("fechaEvento", "<=", fechaHoy);
+                                .where("fechaEvento", ">=", fechaTresSemanasAtras).where("fechaEvento", "<=", fechaHoy);
 
       eventoRef.get().then(function(querySnapshot) {
         if (!querySnapshot.empty) {
@@ -1395,7 +1403,7 @@
                       imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png', // URL de la imagen
                       imageWidth: 120, // Ancho de la imagen en píxeles
                       imageHeight: 235, // Alto de la imagen en píxeles
-                      imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+                      imagePosition: 'top-start' // Posición de la imagen
                   });
                   return; // Detener el proceso de evaluación
               }
@@ -1405,14 +1413,13 @@
 
             // Verificar si cada campo está vacío y agregar su nombre a la lista si es el caso
             if (nombreAsistente.trim() === "") {camposFaltantes.push(" - Nombre del asistente");}
-            //if (telefonoAsistente.trim() === "") {camposFaltantes.push(" - Teléfono del asistente");}
-            //Se hizo opcional el telefono del asistente
             if (correoAsistente.trim() === "") {camposFaltantes.push(" - Correo del asistente");}
             if (capituloEspacio === "") {camposFaltantes.push(" - Capítulo que organizó el espacio");}
             if (nombreEspacio === "") {camposFaltantes.push(" - Nombre del espacio a evaluar");}
             if (pregunta1 === "") {camposFaltantes.push(" - Pregunta 1");}
             if (pregunta2 === "") {camposFaltantes.push(" - Pregunta 2");}
             if (pregunta3 === "") {camposFaltantes.push(" - Pregunta 3");}
+            
             // Verificar si hay campos faltantes
             if (camposFaltantes.length > 0) {
                 // Mostrar una alerta con los campos faltantes
@@ -1428,11 +1435,10 @@
                     imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png', // URL de la imagen
                     imageWidth: 120, // Ancho de la imagen en píxeles
                     imageHeight: 235, // Alto de la imagen en píxeles
-                    imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+                    imagePosition: 'top-start' // Posición de la imagen
                 });
                 return; // Detener el proceso de evaluación
             }
-
 
             // Si todos los campos están diligenciados, continuar con el proceso de evaluación
             // Actualizar la información del evento en la base de datos
@@ -1442,13 +1448,10 @@
 
                   // Incrementar los contadores según las respuestas a las preguntas
                   if (pregunta1 === "1" || pregunta1 === "2" || pregunta1 === "3" || pregunta1 === "4" || pregunta1 === "5" || pregunta1 === "6") {
-                      // Detractor
                       data.detractores = (data.detractores || 0) + 1;
                   } else if (pregunta1 === "7" || pregunta1 === "8") {
-                      // Pasivo
                       data.pasivos = (data.pasivos || 0) + 1;
                   } else {
-                      // Promotor
                       data.promotores = (data.promotores || 0) + 1;
                   }
 
@@ -1473,10 +1476,12 @@
                   data.respuestas2 = (data.respuestas2 || "") + pregunta2 + "|" ;
                   data.respuestas3 = (data.respuestas3 || "") + pregunta3 + "|" ;
 
-                  // Actualizar comentarios y datos personales del asistente
+                  // Actualizar comentarios saneados y datos personales del asistente
                   if (comentarios.trim() !== "") {
                       data.comentarios = (data.comentarios || "") + comentarios + "|" ;
-                  } else {data.comentarios = (data.comentarios || "") + "Ninguno.|"}
+                  } else {
+                      data.comentarios = (data.comentarios || "") + "Ninguno.|";
+                  }
 
                   data.asistentes = (data.asistentes || "") + nombreAsistente + "|";
                   data.correosAsistentes = (data.correosAsistentes || "") + correoAsistente + "|" ;
@@ -1496,14 +1501,13 @@
                       Swal.close(); // Cierra el modal de carga
                       mostrarMensajeEvaluar();
 
-                      // Reiniciar los campos del formulario en caso de que quiera volver a llenar para otro espacio diferente.
+                      // Reiniciar los campos del formulario
                       limpiarEvaluacion();
 
                       var content = document.getElementById("acordeon4-content");
                       content.style.display = "none";
                       }).catch(function(error) {
                           console.error("Error actualizando el evento:", error);
-                          // Mostrar mensaje de error
                           Swal.close(); // Cierra el modal de carga
                           Swal.fire({
                               icon: 'error',
@@ -1515,7 +1519,6 @@
                   });
               }).catch(function(error) {
                   console.error("Error obteniendo el evento:", error);
-                  // Mostrar mensaje de error
                   Swal.close(); // Cierra el modal de carga
                   Swal.fire({
                       icon: 'error',
@@ -1530,7 +1533,6 @@
         }
       }).catch(function(error) {
         console.error("Error al verificar la evaluación del espacio:", error);
-        // Mostrar mensaje de error
         Swal.close(); // Cierra el modal de carga
         Swal.fire({
             icon: 'error',
@@ -1540,10 +1542,10 @@
             allowOutsideClick: true,
             backdrop: true,
             allowEscapeKey: true,
-            imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+            imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
         });
       });
 
