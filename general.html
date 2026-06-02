@@ -1748,16 +1748,23 @@
           </div>
         </div>
         <!-- Aquí se incluye la tabla resumen -->
-        <div class="actualizar-group">
-          <div id="tabla-resumen-container">
-            <h2 style="font-size: 22px; text-transform: uppercase;"><p style="text-align: center;">TABLA RESUMEN DE SATISFACCIÓN DE ESPACIOS 📋</p></h2>
-            <p id="tablaResumenEstado" style="text-align: center; display: block;">La tabla resumen se encuentra oculta.</p>
-            <button id="toggleTablaResumen" onclick="toggleTablaResumen()" style="margin-left: auto;">Mostrar tabla resumen</button>
-            <table id="tabla-resumen" style="display: none;">
-              <!-- Aquí se generará dinámicamente la tabla resumen -->
-            </table>
-          </div>
-        </div>
+<div class="actualizar-group">
+  <div id="tabla-resumen-container">
+    <h2 style="font-size: 22px; text-transform: uppercase;"><p style="text-align: center;">TABLA RESUMEN DE SATISFACCIÓN DE ESPACIOS 📋</p></h2>
+    <p id="tablaResumenEstado" style="text-align: center; display: block;">La tabla resumen se encuentra oculta.</p>
+    
+    <div id="filtros-tabla-container" style="text-align: center; margin-bottom: 15px;">
+      <button onclick="filtrarTablaResumen('todos')" class="btn-filtro-pequeno" style="padding: 5px 10px; font-size: 12px; margin: 0 3px; cursor: pointer; font-weight: bold;">Todos</button>
+      <button onclick="filtrarTablaResumen('valor-agregado')" class="btn-filtro-pequeno" style="padding: 5px 10px; font-size: 12px; margin: 0 3px; cursor: pointer;">VA</button>
+      <button onclick="filtrarTablaResumen('entrenamiento-interno')" class="btn-filtro-pequeno" style="padding: 5px 10px; font-size: 12px; margin: 0 3px; cursor: pointer;">EI</button>
+      <button onclick="filtrarTablaResumen('integracion-entorno')" class="btn-filtro-pequeno" style="padding: 5px 10px; font-size: 12px; margin: 0 3px; cursor: pointer;">IE</button>
+    </div>
+
+    <button id="toggleTablaResumen" onclick="toggleTablaResumen()" style="margin-left: auto;">Mostrar tabla resumen</button>
+    <table id="tabla-resumen" style="display: none;">
+      </table>
+  </div>
+</div>
         <!-- CUARTA MINISECCIÓN: RESPUESTAS DE EVALUACIONES DE SATISFACCIÓN -->
         <div class="actualizar-group">
           <h2 style="font-size: 22px; text-transform: uppercase;">
@@ -2469,13 +2476,13 @@
 
             // Crear la consulta para obtener los eventos dentro del rango de fechas y del capítulo del usuario
             var consulta = reservasRef.where("capitulosOrganizadores", "array-contains", capituloUsuario)
-                                      .where("fechaEvento", ">=", fechaInicial)
-                                      .where("fechaEvento", "<=", fechaFinal)
-                                      .orderBy("fechaEvento", "asc"); // Ordenar por fecha de forma ascendente
+                                    .where("fechaEvento", ">=", fechaInicial)
+                                    .where("fechaEvento", "<=", fechaFinal)
+                                    .orderBy("fechaEvento", "asc"); // Ordenar por fecha de forma ascendente
 
             // Ejecutar la consulta
             consulta.get()
-                  .then(function(querySnapshot) {
+                .then(function(querySnapshot) {
                         // Iterar sobre los resultados de la consulta
                         querySnapshot.forEach(function(doc) {
                             // Obtener los datos del documento
@@ -2483,6 +2490,11 @@
 
                             // Crear fila para este evento
                             var fila = tablaResumen.insertRow();
+
+                            // --- ASIGNACIÓN DE FILTRO CON STRINGS OFICIALES ---
+                            if(data.tipoEvento) {
+                                fila.setAttribute('data-tipo', data.tipoEvento.toLowerCase().trim());
+                            }
 
                             // Insertar celdas con los datos del evento, incluyendo claveEvento
                             fila.insertCell().textContent = data.claveEvento; // Insertar claveEvento como primer campo
@@ -2511,30 +2523,57 @@
                         celdaMensaje.colSpan = encabezadoColumnas.length; // Colspan para que ocupe todas las columnas
                         celdaMensaje.style.textAlign = "center"; // Centrar el mensaje
                     }
-                  })
-                  .catch(function(error) {
+                })
+                .catch(function(error) {
                         // Manejar errores
                         console.error("Error al obtener eventos:", error);
-                  });
+                });
+        }
+    }
+
+    function filtrarTablaResumen(categoriaSeleccionada) {
+        var tabla = document.getElementById("tabla-resumen");
+        var filas = tabla.getElementsByTagName("tr");
+
+        // Empezamos en i = 1 para no ocultar la fila de los encabezados (th)
+        for (var i = 1; i < filas.length; i++) {
+            var fila = filas[i];
+            var tipoFila = fila.getAttribute("data-tipo");
+
+            // Si la fila es la que muestra el mensaje de "No hay espacios", se queda fija
+            if (fila.cells.length === 1 && i === 1 && !tipoFila) {
+                continue;
+            }
+
+            if (categoriaSeleccionada === "todos") {
+                fila.style.display = ""; // Muestra todo
+            } else {
+                // Comparación exacta contra "valor-agregado", "entrenamiento-interno" o "integracion-entorno"
+                if (tipoFila === categoriaSeleccionada) {
+                    fila.style.display = "";
+                } else {
+                    fila.style.display = "none";
+                }
+            }
         }
     }
 
     function convertirFechaFormulario(fechaFormulario) {
-      if (typeof fechaFormulario !== "string") {
-        // Si fechaFormulario no es una cadena, intentamos convertirlo a string
-        fechaFormulario = fechaFormulario.toString();
-      }
-      // La fecha del formulario está en formato "yyyy-mm-dd" (ejemplo: "2023-08-15")
-      // Debemos convertirla a formato de Firestore, que es un objeto Date de JavaScript
-      var partesFecha = fechaFormulario.split("/"); // Separamos año, mes y día
-      var anio = parseInt(partesFecha[0]);
-      var mes = parseInt(partesFecha[1]);
-      var dia = parseInt(partesFecha[2]);
+        if (typeof fechaFormulario !== "string") {
+            // Si fechaFormulario no es una cadena, intentamos convertirlo a string
+            fechaFormulario = fechaFormulario.toString();
+        }
+        // La fecha del formulario está en formato "yyyy-mm-dd" (ejemplo: "2023-08-15")
+        // Debemos convertirla a formato de Firestore, que es un objeto Date de JavaScript
+        var partesFecha = fechaFormulario.split("/"); // Separamos año, mes y día
+        var anio = parseInt(partesFecha[0]);
+        var mes = parseInt(partesFecha[1]);
+        var dia = parseInt(partesFecha[2]);
 
-      // Construimos la fecha en formato de Firestore
-      var fechaFirestore = new Date(anio, mes - 1, dia); // Restamos 1 al mes ya que en JavaScript los meses van de 0 a 11
-      return fechaFirestore;
-    }
+        // Construimos la fecha en formato de Firestore
+        var fechaFirestore = new Date(anio, mes - 1, dia); // Restamos 1 al mes ya que en JavaScript los meses van de 0 a 11
+        return fechaFirestore;
+        }
 
     // Función para mostrar el contenido de la pestaña seleccionada
     function showTab(tabNumber) {
@@ -7997,25 +8036,52 @@ function eliminarReserva() {
         console.log("Empezamos el proceso de graficación de metas y satisfacción");
 
         try {
-            // Obtener datos necesarios para los gráficos desde Firebase
-            // Consulta para obtener los eventos del capítulo dentro del rango de fechas
+            // 1. Obtener datos necesarios para los gráficos desde Firebase
             var fechaHoy = new Date().toISOString().slice(0, 10);
             var reservasRef = firebase.firestore().collection("reservas");
             var consultaEventos = reservasRef.where("capitulosOrganizadores", "array-contains", capituloUsuario)
                 .where("fechaEvento", ">=", fechaInicialPDF)
                 .where("fechaEvento", "<=", fechaFinalPDF);
 
-            // Consulta para obtener las metas del capítulo
-            var cuentasRef = firebase.firestore().collection("cuentas");
-            var consultaMetas = cuentasRef.where("capitulo", "==", capituloUsuario);
+            // --- NUEVA LÓGICA: OBTENER METAS EN TIEMPO REAL DESDE LA COLECCIÓN "METAS" ---
+            // Extraemos el año (ej: "2026") de la fecha inicial para armar el ID del documento (ej: "2026-1" o "2026-2")
+            var anioMeta = fechaInicialPDF.substring(0, 4); 
+            var mesMeta = parseInt(fechaInicialPDF.substring(5, 7), 10);
+            // Determinamos el semestre: si el mes es menor o igual a 6 es periodo 1, si no, periodo 2
+            var periodoMeta = (mesMeta <= 6) ? "1" : "2"; 
+            var idDocumentoMetas = `${anioMeta}-${periodoMeta}`; 
 
-            // Variables para almacenar los resultados
-            var metaVA = globalMetaVA; // Meta de Valor Agregado
-            var metaEI = globalMetaEI; // Meta de Entrenamiento Interno
-            var totalVA = 0; // Total de Valor Agregado
-            var totalEI = 0; // Total de Entrenamiento Interno
+            console.log("Consultando documento de metas asignado para este rango:", idDocumentoMetas);
 
-            console.log(`Metas establecidas -> metaVA: ${metaVA}, metaEI: ${metaEI}`);
+            var metaVA = 0;
+            var metaEI = 0;
+
+            try {
+                var docMeta = await firebase.firestore().collection("metas").doc(idDocumentoMetas).get();
+                if (docMeta.exists) {
+                    var dataMeta = docMeta.data();
+                    metaVA = Number(dataMeta.metaVA) || 0;
+                    metaEI = Number(dataMeta.metaEI) || 0;
+                    
+                    // Actualizamos las variables globales de respaldo por si otra sección del código las necesita
+                    globalMetaVA = metaVA;
+                    globalMetaEI = metaEI;
+                } else {
+                    console.warn(`No se encontró el documento ${idDocumentoMetas} en la colección 'metas'. Usando respaldos.`);
+                    metaVA = Number(globalMetaVA) || 0;
+                    metaEI = Number(globalMetaEI) || 0;
+                }
+            } catch (errorMeta) {
+                console.error("Error al consultar la colección de metas de forma directa, usando globales:", errorMeta);
+                metaVA = Number(globalMetaVA) || 0;
+                metaEI = Number(globalMetaEI) || 0;
+            }
+            // -------------------------------------------------------------------------
+
+            var totalVA = 0; 
+            var totalEI = 0; 
+
+            console.log(`Metas cargadas con éxito -> metaVA: ${metaVA}, metaEI: ${metaEI}`);
 
             // Calcular meta general
             var metaGeneral = metaVA + metaEI;
@@ -8034,12 +8100,12 @@ function eliminarReserva() {
             // Calcular total general
             var totalGeneral = totalVA + totalEI;
 
-            // Calcular porcentajes de cumplimiento de metas
-            var porcentajeVACumplido = (totalVA / metaVA) * 100;
-            var porcentajeEICumplido = (totalEI / metaEI) * 100;
-            var porcentajeGeneralCumplido = (totalGeneral / metaGeneral) * 100;
+            // CONTROL PREVENTIVO DE DIVISIÓN ENTRE CERO (EVITA EL INFINITY)
+            var porcentajeVACumplido = metaVA > 0 ? (totalVA / metaVA) * 100 : 0.00;
+            var porcentajeEICumplido = metaEI > 0 ? (totalEI / metaEI) * 100 : 0.00;
+            var porcentajeGeneralCumplido = metaGeneral > 0 ? (totalGeneral / metaGeneral) * 100 : 0.00;
 
-            // Formatear porcentajes
+            // Formatear porcentajes de manera limpia
             var porcentajeVAFormateado = porcentajeVACumplido.toFixed(2) + "%";
             var porcentajeEIFormateado = porcentajeEICumplido.toFixed(2) + "%";
             var porcentajeGeneralFormateado = porcentajeGeneralCumplido.toFixed(2) + "%";
@@ -8050,14 +8116,15 @@ function eliminarReserva() {
             // Actualizar el contenido con los porcentajes formateados
             porcentajesContainer.innerHTML = "Alcanzado VA: " + porcentajeVAFormateado + " | Alcanzado EI: " + porcentajeEIFormateado + " | Avance formación: " + porcentajeGeneralFormateado;
             var valoresPorcentajes = "Alcanzado VA: " + porcentajeVAFormateado + ", Alcanzado EI: " + porcentajeEIFormateado + ", Avance formación: " + porcentajeGeneralFormateado;
-            console.log("El valor de porcentajes es: " + valoresPorcentajes)
-            // Llamar función para que el gráfico de metas se actualice
+            console.log("El valor de porcentajes es: " + valoresPorcentajes);
+            
+            // Llamar función para que el gráfico de metas se actualice con datos reales
             actualizarGraficoMetas(metaVA, metaEI, totalVA, totalEI, metaGeneral, totalGeneral);
 
             // Calcular promedios de satisfacción por área de trabajo
             var satisfaccionesPromedio = await calcularPromediosSatisfaccion(consultaEventos);
-            console.log("satisfaccionesPromedio: ")
-            console.log(satisfaccionesPromedio)
+            console.log("satisfaccionesPromedio: ");
+            console.log(satisfaccionesPromedio);
 
             // Llamar función para que el gráfico de satisfacción se actualice
             actualizarGraficoSatisfaccion(...satisfaccionesPromedio);
@@ -8075,7 +8142,7 @@ function eliminarReserva() {
             "|➕" + (await consultaEventos.where("tipoEvento", "==", "valor-agregado").get()).size +
             "|🏋🏻" + (await consultaEventos.where("tipoEvento", "==", "entrenamiento-interno").get()).size +
             "|n/a " + (await consultaEventos.where("tipoEvento", "==", "ninguno").get()).size;
-            var valoresSatisfaccion = satisfaccionContainer.textContent
+            var valoresSatisfaccion = satisfaccionContainer.textContent;
 
             // Devuelves los valores en un objeto
             return {
@@ -8097,9 +8164,8 @@ function eliminarReserva() {
         } catch (error) {
             console.error("Error al generar gráficos:", error);
         }
-
-    }
-
+    } 
+        
     // Función para calcular promedios de satisfacción por área de trabajo
     async function calcularPromediosSatisfaccion(consultaEventos) {
         var consultasSatisfaccion = [
