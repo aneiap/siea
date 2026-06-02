@@ -1302,35 +1302,8 @@
                 <input type="text" id="email-organizador-reserva" placeholder="Acá aparecerá el email del organizador de la reserva.">
               </div>
              <div class="half">
-              <label for="capitulo-organizador-reserva"><b>Capítulo al que aplica la reserva: *</b></label>
-              <select id="capitulo-organizador-reserva">
-                <option value="" disabled selected hidden>Selecciona el capítulo para el que aplica la reserva.</option>
-                <option value="uniguajira">UNIGUAJIRA</option>
-                <option value="unimagdalena">UNIMAGDALENA</option>
-                <option value="usasm">USASM</option>
-                <option value="unicaribe">UNICARIBE</option>
-                <option value="uniatlantico">UNIATLÁNTICO</option>
-                <option value="uninorte">UNINORTE</option>
-                <option value="unisimon">UNISIMÓN</option>
-                <option value="cuc">CUC</option>
-                <option value="librequilla">LIBREQUILLA</option>
-                <option value="utb">UTB</option>
-                <option value="upbmonteria">UPBMONTERÍA</option>
-                <option value="unicordoba">UNICÓRDOBA</option>
-                <option value="ufps">UFPS</option>
-                <option value="unalmed">UNALMED</option>
-                <option value="udea">UDEA</option>
-                <option value="upbmed">UPBMED</option>
-                <option value="utp">UTP</option>
-                <option value="unalma">UNALMA</option>
-                <option value="udistrital">UDISTRITAL</option>
-                <option value="unalbog">UNALBOG</option>
-                <option value="univalle">UNIVALLE</option>
-                <option value="icesi">ICESI</option>
-                <option value="uao">UAO</option>
-                <option value="usc">USC</option>
-                <option value="nacional">ANEIAP NACIONAL</option>
-              </select>
+                <label for="capitulo-organizador-reserva"><b>Capítulo al que aplica la reserva: *</b></label>
+                <input type="text" id="capitulo-organizador-reserva" readonly style="background-color: #e9ecef; color: #495057; cursor: not-allowed;" placeholder="Cargando capítulo(s)...">              </select>
               </div>
               </div>
             <label for="telefono-organizador-reserva"><b>Teléfono del organizador en la reserva: *</b></label>
@@ -2073,6 +2046,7 @@
     var globalMetaIE = 0;
     var valoresPorcentajes = 2;
     var PosYParaSG = '';
+    var arrayCapitulosEdicion = [];
     // Cargar la imagen que deseas usar como fondo para fi
     var img = new Image();
     img.src = 'https://raw.githubusercontent.com/AlessVilla/SIEA/master/public/fondo_informe_pdf.png';
@@ -3053,542 +3027,520 @@
     }
 
     function consultarReserva() {
+        var claveEventoConsultar = document.getElementById("clave-evento-reserva").value;
 
-    var claveEventoConsultar = document.getElementById("clave-evento-reserva").value;
+        // Verificar si el campo está vacío
+        if (claveEventoConsultar.trim() === "") {
+            Swal.fire({
+                title: '¡NO HAS DILIGENCIADO NINGUNA CLAVE!',
+                text: 'Por favor, ingresa la clave de la reserva de tu evento.',
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+            });
+            return;
+        }
 
-    // Verificar si el campo está vacío
-    if (claveEventoConsultar.trim() === "") {
-      // Mostrar alerta si el campo está vacío
-      Swal.fire({
-        title: '¡NO HAS DILIGENCIADO NINGUNA CLAVE!',
-        text: 'Por favor, ingresa la clave de la reserva de tu evento.',
-        icon: 'warning',
-        confirmButtonText: 'Aceptar',
-        imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png', // URL de la imagen
-        imageWidth: 120, // Ancho de la imagen en píxeles
-        imageHeight: 235, // Alto de la imagen en píxeles
-        imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-      });
-      return; // Salir de la función si el campo está vacío
-    }
+        // Obtener la referencia al documento de la reserva en la base de datos
+        var reservasRef = firebase.firestore().collection("reservas").doc(claveEventoConsultar);
 
-    // Obtener la referencia al documento de la reserva en la base de datos
-    var reservasRef = firebase.firestore().collection("reservas").doc(claveEventoConsultar);
+        reservasRef.get().then((doc) => {
+            if (doc.exists) {
+                // El documento existe, obtener los datos de la reserva
+                var reserva = doc.data();
+                
+                // Asignar los valores de la reserva a los campos del formulario
+                document.getElementById("nombre-evento-reserva").value = reserva.nombreEvento;
+                document.getElementById("fecha-evento-reserva").value = reserva.fechaEvento;
+                document.getElementById("hora-evento-reserva").value = reserva.horaEvento;
+                document.getElementById("duracion-evento-reserva").value = reserva.duracionEvento;
+                document.getElementById("modalidad-evento-reserva").value = reserva.modalidadEvento;
+                document.getElementById("ubicacion-plataforma-reserva").value = reserva.ubicacionPlataforma;
+                document.getElementById("lugar-presencial-reserva").value = reserva.lugarPresencial;
+                document.getElementById("plan-evento-reserva").value = reserva.planEvento;
+                document.getElementById("observaciones-evento-reserva").value = reserva.observacionesEvento;
+                document.getElementById("nombre-organizador-reserva").value = reserva.nombreOrganizador;
+                document.getElementById("email-organizador-reserva").value = reserva.emailOrganizador;
+                document.getElementById("telefono-organizador-reserva").value = reserva.telefonoOrganizador;
+                document.getElementById("nombre-ponente-reserva").value = reserva.nombrePonente;
+                document.getElementById("email-ponente-reserva").value = reserva.emailPonente;
+                document.getElementById("telefono-ponente-reserva").value = reserva.telefonoPonente;
+                document.getElementById("publicidad-comite-reserva").value = reserva.publicidadComite;       
+                document.getElementById("foto-ponente-reserva").value = reserva.fotoPonenteURL;
 
-    reservasRef.get().then((doc) => {
-      if (doc.exists) {
-        // El documento existe, obtener los datos de la reserva
-        var reserva = doc.data();
-        // Asignar los valores de la reserva a los campos del formulario
-        document.getElementById("nombre-evento-reserva").value = reserva.nombreEvento;
-        document.getElementById("fecha-evento-reserva").value = reserva.fechaEvento;
-        document.getElementById("hora-evento-reserva").value = reserva.horaEvento;
-        document.getElementById("duracion-evento-reserva").value = reserva.duracionEvento;
-        document.getElementById("modalidad-evento-reserva").value = reserva.modalidadEvento;
-        document.getElementById("ubicacion-plataforma-reserva").value = reserva.ubicacionPlataforma;
-        document.getElementById("lugar-presencial-reserva").value = reserva.lugarPresencial;
-        document.getElementById("plan-evento-reserva").value = reserva.planEvento;
-        document.getElementById("observaciones-evento-reserva").value = reserva.observacionesEvento;
-        document.getElementById("nombre-organizador-reserva").value = reserva.nombreOrganizador;
-        document.getElementById("capitulo-organizador-reserva").value = reserva.capitulo;
-        document.getElementById("email-organizador-reserva").value = reserva.emailOrganizador;
-        document.getElementById("telefono-organizador-reserva").value = reserva.telefonoOrganizador;
-        document.getElementById("nombre-ponente-reserva").value = reserva.nombrePonente;
-        document.getElementById("email-ponente-reserva").value = reserva.emailPonente;
-        document.getElementById("telefono-ponente-reserva").value = reserva.telefonoPonente;
-        document.getElementById("publicidad-comite-reserva").value = reserva.publicidadComite;       
-        document.getElementById("foto-ponente-reserva").value = reserva.fotoPonenteURL;
-        // Guardar el valor de la fecha actual para reponerla en caso de que la validación de disponibiildad falle
-        guardarBackupFechaEventoReserva();
+                // --- LÓGICA MULTICAPÍTULO AL CONSULTAR ---
+                // Guardamos el array nativo en la variable global. Si es un doc antiguo, respaldamos con 'capitulo'
+                arrayCapitulosEdicion = reserva.capitulosOrganizadores || (reserva.capitulo ? [reserva.capitulo] : []);
 
-        // Mostrar el contenido del acordeón datos-reserva-container
-        var datosReservaContainer = document.getElementById("datos-reserva-container");
-        datosReservaContainer.style.display = "block";
-        var content = document.getElementById("acordeon2-content");
-        content.style.display = "block";
-      } else {
-        // El documento no existe, mostrar un mensaje indicando que la reserva no se encontró
-        Swal.fire({
-          title: '¡NO EXISTE LA RESERVA QUE BUSCAS!',
-          text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que de verdad exista y que estás escribiendo bien la clave,',
-          icon: 'warning',
-          confirmButtonText: 'Aceptar',
-          imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-          imageWidth: 120, // Ancho de la imagen en píxeles
-          imageHeight: 235, // Alto de la imagen en píxeles
-          imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+                const diccionarioNombres = {
+                    "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
+                    "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
+                    "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
+                    "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
+                    "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
+                    "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
+                    "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC", "nacional": "ANEIAP NACIONAL"
+                };
+
+                // Convertir a texto legible separado por comas para inyectarlo de forma estética en el input readonly
+                let textoCapitulosVisual = arrayCapitulosEdicion.map(key => diccionarioNombres[key.toLowerCase().trim()] || key.toUpperCase()).join(", ");
+                document.getElementById("capitulo-organizador-reserva").value = textoCapitulosVisual;
+
+                // Guardar el valor de la fecha actual para reponerla en caso de que la validación falle
+                guardarBackupFechaEventoReserva();
+
+                // Mostrar el contenido del acordeón datos-reserva-container
+                var datosReservaContainer = document.getElementById("datos-reserva-container");
+                datosReservaContainer.style.display = "block";
+                var content = document.getElementById("acordeon2-content");
+                content.style.display = "block";
+            } else {
+                Swal.fire({
+                    title: '¡NO EXISTE LA RESERVA QUE BUSCAS!',
+                    text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que de verdad exista y que estás escribiendo bien la clave.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+            }
+        }).catch((error) => {
+            console.error("Error al consultar la reserva: ", error);
+            Swal.fire({
+                title: '¡ERROR!',
+                text: 'Ha ocurrido un error al consultar la reserva. Inténtalo nuevamente más tarde o consulta con el administrador/creador del sistema.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+            });
         });
-      }
-    }).catch((error) => {
-      // Error al consultar el documento
-      console.error("Error al consultar la reserva: ", error);
-      Swal.fire({
-        title: '¡ERROR!',
-        text: 'Ha ocurrido un error al consultar la reserva. Inténtalo nuevamente más tarde o consulta con el administrador/creador del sistema.',
-        icon: 'error',
-        confirmButtonText: 'Aceptar',
-        imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png', // URL de la imagen
-        imageWidth: 120, // Ancho de la imagen en píxeles
-        imageHeight: 235, // Alto de la imagen en píxeles
-        imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-      });
-    });
     }
 
     function editarReserva() {
-
-      // Verificar que el correo sea de alguien de la jdn cuando se reserve a nivel nacional ya que estos eventos bloquean el calendario de todos los capítulos.
-      var capituloReserva = document.getElementById("capitulo-organizador-reserva").value;
-      var emailOrganizadorReserva = document.getElementById("email-organizador-reserva").value;
-
-      // Validar que todos los campos estén llenos y sean válidos
-      var camposValidos = validarCamposEdicion();
-
-      // Si todos los campos están llenos y son válidos, proceder con la edición de la reserva
-      if (camposValidos) {
-        // Verificar si la fecha del evento es válida (mayor a la fecha actual)
-        var fechaEventoReserva = document.getElementById("fecha-evento-reserva").value;
-        console.log("la fecha nueva es:" + fechaEventoReserva);
-        var fechaActual = new Date()//.toISOString().slice(0, 10);
-        var fechaActualISOS = new Date().toISOString().slice(0, 10);
-
-        // Verificar si el correo es igual a "aneiap_nacional@aneiap.co"
-        if (emailOrganizadorReserva === "aneiap_nacional@aneiap.co") {
-          console.log("email del organizador: " + emailOrganizadorReserva)
-          Swal.fire({
-            title: '¡CORREO PROHIBIDO!',
-            text: 'El correo aneiap_nacional@aneiap.co no puede ser organizador, recuerda que acá va el correo de quien es el organizador. Por favor, utiliza un correo diferente.',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
-        }
-
-        // Verificar si el correo comienza con "capitulo" o "directivos"
-        if (emailOrganizadorReserva.toLowerCase().startsWith("capitulo") || emailOrganizadorReserva.toLowerCase().startsWith("directivos")) {
-          Swal.fire({
-            title: '¡CORREO PROHIBIDO!',
-            text: 'Los correos que comienzan con "capitulo" o "directivos" están prohibidos para ser organizador, recuerda que solo el correo del organizador es lo que se escribe acá. Por favor, utiliza un correo diferente.',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
-        }
-
-        // Verificar si el correo termina con "@aneiap.co"
-        if (!emailOrganizadorReserva.toLowerCase().endsWith("@aneiap.co")) {
-            Swal.fire({
-                title: '¡CORREO INCORRECTO!',
-                text: 'El correo electrónico debe terminar con "@aneiap.co". Por favor, utiliza un correo válido.',
-                icon: 'warning',
-                confirmButtonText: 'Aceptar',
-                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-                imageWidth: 120, // Ancho de la imagen en píxeles
-                imageHeight: 235, // Alto de la imagen en píxeles
-                imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            });
-            return; // Detener la edición de la reserva
-        }
-
         // Verificar que el correo sea de alguien de la jdn cuando se reserve a nivel nacional ya que estos eventos bloquean el calendario de todos los capítulos.
-        var capituloReserva = document.getElementById("capitulo-organizador-reserva").value;
-        if (capituloReserva === "nacional" && capituloUsuario !== "nacional") {
-          Swal.fire({
-            title: '¡NO TIENES PERMISOS PARA RESERVAR A NIVEL NACIONAL!',
-            text: 'Solo los homólogos nacionales (junta nacional) tienen permiso para reservar a nivel nacional, si deseas hacer una reserva nacional, contáctate con ellos.',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
-        }
+        var emailOrganizadorReserva = document.getElementById("email-organizador-reserva").value;
 
-        if ((fechaEventoReserva < fechaActual) || (fechaEventoReserva < fechaActualISOS)) {
-          Swal.fire({
-            title: '¡FECHA INCORRECTA!',
-            text: 'Debes reservar al menos con 2 días de anticipación, si ya se venció el plazo y deseas hacerlo igualmente, contacta al administrador.',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
-        }
+        // Validar que todos los campos estén llenos y sean válidos
+        var camposValidos = validarCamposEdicion();
 
-        // Verificar el formato del teléfono del organizador (debe empezar por 3 y tener 10 dígitos)
-        var telefonoOrganizadorReserva = document.getElementById("telefono-organizador-reserva").value;
-        var telefonoOrganizadorReservaRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
+        // Si todos los campos están llenos y son válidos, proceder con la edición de la reserva
+        if (camposValidos) {
+            var fechaEventoReserva = document.getElementById("fecha-evento-reserva").value;
+            console.log("la fecha nueva es:" + fechaEventoReserva);
+            var fechaActual = new Date();
+            var fechaActualISOS = new Date().toISOString().slice(0, 10);
 
-        if (!telefonoOrganizadorReservaRegex.test(telefonoOrganizadorReserva)) {
-          Swal.fire({
-            title: '¡TELÉFONO DEL ORGANIZADOR INCORRECTO!',
-            text: 'Digita un número de teléfono válido.',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
-        }
+            // Verificar si el correo es igual a "aneiap_nacional@aneiap.co"
+            if (emailOrganizadorReserva === "aneiap_nacional@aneiap.co") {
+                Swal.fire({
+                    title: '¡CORREO PROHIBIDO!',
+                    text: 'El correo aneiap_nacional@aneiap.co no puede ser organizador, recuerda que acá va el correo de quien es el organizador. Por favor, utiliza un correo diferente.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+                return;
+            }
 
-        // Verificar el formato del teléfono del ponente (debe empezar por 3 y tener 10 dígitos) si está diligenciado
-        var telefonoPonenteReserva = document.getElementById("telefono-ponente-reserva").value;
-        if (telefonoPonenteReserva !== "" && !telefonoOrganizadorReservaRegex.test(telefonoPonenteReserva)) {
-          Swal.fire({
-            title: '¡TELÉFONO DEL PONENTE INCORRECTO!',
-            text: 'Digita un número de teléfono válido.',
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener la edición de la reserva
-        }
+            // Verificar si el correo comienza con "capitulo" o "directivos"
+            if (emailOrganizadorReserva.toLowerCase().startsWith("capitulo") || emailOrganizadorReserva.toLowerCase().startsWith("directivos")) {
+                Swal.fire({
+                    title: '¡CORREO PROHIBIDO!',
+                    text: 'Los correos que comienzan con "capitulo" o "directivos" están prohibidos para ser organizador, recuerda que solo el correo del organizador es lo que se escribe acá. Por favor, utiliza un correo diferente.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+                return;
+            }
 
-        // Obtener el enlace del usuario
-        var enlaceGoogleDriveReserva = document.getElementById("foto-ponente-reserva").value;
-        // Expresión regular para verificar el formato del enlace de Google Drive
-        var enlaceGoogleDriveRegex = /^https:\/\/drive\.google\.com\/.*$/;
-        var publicidadComiteReserva = document.getElementById("publicidad-comite-reserva").value
+            // Verificar si el correo termina con "@aneiap.co"
+            if (!emailOrganizadorReserva.toLowerCase().endsWith("@aneiap.co")) {
+                Swal.fire({
+                    title: '¡CORREO INCORRECTO!',
+                    text: 'El correo electrónico debe terminar con "@aneiap.co". Por favor, utiliza un correo válido.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+                return;
+            }
 
-        // Validar el enlace utilizando la expresión regular
-        if (publicidadComiteReserva === "si") {
-        if (enlaceGoogleDriveReserva !== "") {
-        if (!enlaceGoogleDriveRegex.test(enlaceGoogleDriveReserva)) {
-          Swal.fire({
-            title: "¡ENLACE INVÁLIDO!",
-            text: "Por favor, ingresa un enlace de Google Drive válido para la foto del ponente.",
-            icon: "warning",
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return; // Detener el registro del evento
-          }
-        }
+            // --- VALIDACIÓN DE PERMISOS NACIONALES USANDO EL ARRAY GLOBAL ---
+            if (arrayCapitulosEdicion.includes("nacional") && capituloUsuario !== "nacional") {
+                Swal.fire({
+                    title: '¡NO TIENES PERMISOS PARA RESERVAR A NIVEL NACIONAL!',
+                    text: 'Solo los homólogos nacionales (junta nacional) tienen permiso para reservar a nivel nacional, si deseas hacer una reserva nacional, contáctate con ellos.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+                return;
+            }
 
-        }
+            if ((fechaEventoReserva < fechaActual) || (fechaEventoReserva < fechaActualISOS)) {
+                Swal.fire({
+                    title: '¡FECHA INCORRECTA!',
+                    text: 'Debes reservar al menos con 2 días de anticipación, si ya se venció el plazo y deseas hacerlo igualmente, contacta al administrador.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+                return;
+            }
 
-        // Aquí realizarías la lógica para verificar la disponibilidad de horarios
-        var claveEventoReserva = document.getElementById("clave-evento-reserva").value;
-        var fechaEventoReserva = document.getElementById("fecha-evento-reserva").value;
-        var horaEventoReserva = document.getElementById("hora-evento-reserva").value;
-        var duracionEventoReserva = document.getElementById("duracion-evento-reserva").value;
+            var telefonoOrganizadorReserva = document.getElementById("telefono-organizador-reserva").value;
+            var telefonoOrganizadorReservaRegex = /^(?:3\d{9})(?: (?:3\d{9}))*$/;
 
-        // Lógica para verificar disponibilidad (puedes basarte en tu función ConsultarDisponibilidadReservas)
-        // Obtener la fecha del evento con claveEventoReserva de la base de datos
-        var eventoRef = firebase.firestore().collection("reservas").doc(claveEventoReserva);
+            if (!telefonoOrganizadorReservaRegex.test(telefonoOrganizadorReserva)) {
+                Swal.fire({
+                    title: '¡TELÉFONO DEL ORGANIZADOR INCORRECTO!',
+                    text: 'Digita un número de teléfono válido.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+                return;
+            }
 
-        eventoRef.get().then((doc) => {
-          if (doc.exists) {
-            // El documento existe, realizar operaciones relacionadas con el evento
-            // El documento existe, obtener los datos de la reserva
-            var reserva = doc.data();
-            //var fechaEventoDB = doc.data().fechaEvento.toDate();
-            var fechaEventoDB = reserva.fechaEvento;
-            console.log("la fecha en la database es:" + fechaEventoDB);
+            var telefonoPonenteReserva = document.getElementById("telefono-ponente-reserva").value;
+            if (telefonoPonenteReserva !== "" && !telefonoOrganizadorReservaRegex.test(telefonoPonenteReserva)) {
+                Swal.fire({
+                    title: '¡TELÉFONO DEL PONENTE INCORRECTO!',
+                    text: 'Digita un número de teléfono válido.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+                return;
+            }
 
-            // Verificar si hay disponibilidad para esa fecha y hora de edición
-            verificarDisponibilidadEdicion().then(function(result) {
-              if (!result) {
-                // Si no se muestra ningún swal.fire, ejecuta el código a continuación
-              } else {
-                // Obtenemos todos los campos individualmente
-                var nombreEventoReserva = document.getElementById("nombre-evento-reserva").value;
-                var claveEventoReserva = document.getElementById("clave-evento-reserva").value;
-                var fechaEventoReserva = document.getElementById("fecha-evento-reserva").value;
-                var horaEventoReserva = document.getElementById("hora-evento-reserva").value;
-                var duracionEventoReserva = document.getElementById("duracion-evento-reserva").value;
-                var modalidadEventoReserva = document.getElementById("modalidad-evento-reserva").value;
-                var ubicacionPlataformaReserva = document.getElementById("ubicacion-plataforma-reserva").value;
-                var lugarPresencialReserva = document.getElementById("lugar-presencial-reserva").value;
-                var planEventoReserva = document.getElementById("plan-evento-reserva").value;
-                var observacionesEventoReserva = document.getElementById("observaciones-evento-reserva").value;
-                var nombreOrganizadorReserva = document.getElementById("nombre-organizador-reserva").value;
-                var emailOrganizadorReserva = document.getElementById("email-organizador-reserva").value;
-                var capituloReserva = document.getElementById("capitulo-organizador-reserva").value;
-                var telefonoOrganizadorReserva = document.getElementById("telefono-organizador-reserva").value;
-                var nombrePonenteReserva = document.getElementById("nombre-ponente-reserva").value;
-                var emailPonenteReserva = document.getElementById("email-ponente-reserva").value;
-                var telefonoPonenteReserva = document.getElementById("telefono-ponente-reserva").value;
-                var publicidadComiteReserva = document.getElementById("publicidad-comite-reserva").value;
-                var observacionesPublicidadReserva = document.getElementById("observaciones-publicidad-reserva").value;
-                var fotoPonenteURLReserva = document.getElementById("foto-ponente-reserva").value;
+            var enlaceGoogleDriveReserva = document.getElementById("foto-ponente-reserva").value;
+            var enlaceGoogleDriveRegex = /^https:\/\/drive\.google\.com\/.*$/;
+            var publicidadComiteReserva = document.getElementById("publicidad-comite-reserva").value
 
-                if (publicidadComiteReserva === "si") {
-                  // Mostrar swal.fire para que el usuario seleccione la opción de publicidad
-                  swal.fire({
-                      title: '¿Desea enviar la solicitud de publicidad a nivel nacional o capitular?',
-                      showDenyButton: true,
-                      showCloseButton: false, // Oculta el botón de cerrar
-                      allowOutsideClick: false, // Impide cerrar haciendo clic afuera
-                      confirmButtonText: `Nacional`,
-                      denyButtonText: `Capitular`,
-                  }).then((result) => {
-                      if (result.isConfirmed) {
-                          // Si el usuario elige enviar a nivel nacional
-                          enviarSolicitudPublicidadEdicionEmailJS("si");
-                          enviarCorreoEdicionEmailJS();
-                          editarEventoFirestore(nombreEventoReserva, claveEventoReserva, fechaEventoReserva, horaEventoReserva, duracionEventoReserva, modalidadEventoReserva, ubicacionPlataformaReserva, lugarPresencialReserva, planEventoReserva, observacionesEventoReserva, nombreOrganizadorReserva, emailOrganizadorReserva, capituloReserva, telefonoOrganizadorReserva, nombrePonenteReserva, emailPonenteReserva, telefonoPonenteReserva, publicidadComiteReserva, observacionesPublicidadReserva, fotoPonenteURLReserva);
-                          // Restablecer los campos a su valor por defecto (vacío)
-                          // Ocultar el contenido del acordeón datos-reserva-container
-                          var datosReservaContainer = document.getElementById("datos-reserva-container");
-                          datosReservaContainer.style.display = "none";
-                          var content = document.getElementById("acordeon2-content");
-                          content.style.display = "none";
-                      } else if (result.isDenied) {
-                        // Si el usuario elige enviar a nivel capitular
-                        enviarSolicitudPublicidadEdicionEmailJS("no");
-                        enviarCorreoEdicionEmailJS();
-                        editarEventoFirestore(nombreEventoReserva, claveEventoReserva, fechaEventoReserva, horaEventoReserva, duracionEventoReserva, modalidadEventoReserva, ubicacionPlataformaReserva, lugarPresencialReserva, planEventoReserva, observacionesEventoReserva, nombreOrganizadorReserva, emailOrganizadorReserva, capituloReserva, telefonoOrganizadorReserva, nombrePonenteReserva, emailPonenteReserva, telefonoPonenteReserva, publicidadComiteReserva, observacionesPublicidadReserva, fotoPonenteURLReserva);
-                        // Restablecer los campos a su valor por defecto (vacío)
-                        // Ocultar el contenido del acordeón datos-reserva-container
-                        var datosReservaContainer = document.getElementById("datos-reserva-container");
-                        datosReservaContainer.style.display = "none";
-                        var content = document.getElementById("acordeon2-content");
-                        content.style.display = "none";
-                      }
-                  });
-                } else {
-                  enviarCorreoEdicionEmailJS();
-                  editarEventoFirestore(nombreEventoReserva, claveEventoReserva, fechaEventoReserva, horaEventoReserva, duracionEventoReserva, modalidadEventoReserva, ubicacionPlataformaReserva, lugarPresencialReserva, planEventoReserva, observacionesEventoReserva, nombreOrganizadorReserva, emailOrganizadorReserva, capituloReserva, telefonoOrganizadorReserva, nombrePonenteReserva, emailPonenteReserva, telefonoPonenteReserva, publicidadComiteReserva, observacionesPublicidadReserva, fotoPonenteURLReserva);
-                  // Restablecer los campos a su valor por defecto (vacío)
-                  // Ocultar el contenido del acordeón datos-reserva-container
-                  var datosReservaContainer = document.getElementById("datos-reserva-container");
-                  datosReservaContainer.style.display = "none";
-                  var content = document.getElementById("acordeon2-content");
-                  content.style.display = "none";
+            if (publicidadComiteReserva === "si") {
+                if (enlaceGoogleDriveReserva !== "" && !enlaceGoogleDriveRegex.test(enlaceGoogleDriveReserva)) {
+                    Swal.fire({
+                        title: "¡ENLACE INVÁLIDO!",
+                        text: "Por favor, ingresa un enlace de Google Drive válido para la foto del ponente.",
+                        icon: "warning",
+                        confirmButtonText: 'Aceptar',
+                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                        imageWidth: 120,
+                        imageHeight: 235,
+                        imagePosition: 'top-start'
+                    });
+                    return;
                 }
-                
-              }
-            }).catch(function(error) {
-              // Maneja cualquier error que pueda ocurrir durante la verificación
-              console.error("Error al verificar la disponibilidad:", error);
-            });
+            }
 
-              // Mostrar mensaje de éxito
-              // El mensaje de editar lo arroja la función editarDisponibilidad
-          } else {
-            // El documento no existe, mostrar mensaje de error
-            Swal.fire({
-              title: '¡NO EXISTE EL EVENTO QUE BUSCAS!',
-              text: 'Verifica que estés escribiendo una clave de evento que de verdad exista.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar',
-              imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-              imageWidth: 120, // Ancho de la imagen en píxeles
-              imageHeight: 235, // Alto de la imagen en píxeles
-              imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+            var claveEventoReserva = document.getElementById("clave-evento-reserva").value;
+            var eventoRef = firebase.firestore().collection("reservas").doc(claveEventoReserva);
+
+            eventoRef.get().then((doc) => {
+                if (doc.exists) {
+                    // Verificar si hay disponibilidad para esa fecha y hora de edición
+                    verificarDisponibilidadEdicion().then(function(result) {
+                        if (result) {
+                            // Obtenemos todos los campos individualmente
+                            var nombreEventoReserva = document.getElementById("nombre-evento-reserva").value;
+                            var claveEventoReserva = document.getElementById("clave-evento-reserva").value;
+                            var fechaEventoReserva = document.getElementById("fecha-evento-reserva").value;
+                            var horaEventoReserva = document.getElementById("hora-evento-reserva").value;
+                            var duracionEventoReserva = document.getElementById("duracion-evento-reserva").value;
+                            var modalidadEventoReserva = document.getElementById("modalidad-evento-reserva").value;
+                            var ubicacionPlataformaReserva = document.getElementById("ubicacion-plataforma-reserva").value;
+                            var lugarPresencialReserva = document.getElementById("lugar-presencial-reserva").value;
+                            var planEventoReserva = document.getElementById("plan-evento-reserva").value;
+                            var observacionesEventoReserva = document.getElementById("observaciones-evento-reserva").value;
+                            var nombreOrganizadorReserva = document.getElementById("nombre-organizador-reserva").value;
+                            var emailOrganizadorReserva = document.getElementById("email-organizador-reserva").value;
+                            var telefonoOrganizadorReserva = document.getElementById("telefono-organizador-reserva").value;
+                            var nombrePonenteReserva = document.getElementById("nombre-ponente-reserva").value;
+                            var emailPonenteReserva = document.getElementById("email-ponente-reserva").value;
+                            var telefonoPonenteReserva = document.getElementById("telefono-ponente-reserva").value;
+                            var publicidadComiteReserva = document.getElementById("publicidad-comite-reserva").value;
+                            var observacionesPublicidadReserva = document.getElementById("observaciones-publicidad-reserva").value;
+                            var fotoPonenteURLReserva = document.getElementById("foto-ponente-reserva").value;
+
+                            // --- PASAR CAPÍTULO RAÍZ COMO STRING COMPATIBLE ---
+                            var capituloRaizString = arrayCapitulosEdicion[0] || "";
+
+                            if (publicidadComiteReserva === "si") {
+                                swal.fire({
+                                    title: '¿Desea enviar la solicitud de publicidad a nivel nacional o capitular?',
+                                    showDenyButton: true,
+                                    showCloseButton: false,
+                                    allowOutsideClick: false,
+                                    confirmButtonText: `Nacional`,
+                                    denyButtonText: `Capitular`,
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        enviarSolicitudPublicidadEdicionEmailJS("si");
+                                        enviarCorreoEdicionEmailJS();
+                                        editarEventoFirestore(nombreEventoReserva, claveEventoReserva, fechaEventoReserva, horaEventoReserva, duracionEventoReserva, modalidadEventoReserva, ubicacionPlataformaReserva, lugarPresencialReserva, planEventoReserva, observacionesEventoReserva, nombreOrganizadorReserva, emailOrganizadorReserva, capituloRaizString, telefonoOrganizadorReserva, nombrePonenteReserva, emailPonenteReserva, telefonoPonenteReserva, publicidadComiteReserva, observacionesPublicidadReserva, fotoPonenteURLReserva);
+                                        
+                                        var datosReservaContainer = document.getElementById("datos-reserva-container");
+                                        datosReservaContainer.style.display = "none";
+                                        var content = document.getElementById("acordeon2-content");
+                                        content.style.display = "none";
+                                    } else if (result.isDenied) {
+                                        enviarSolicitudPublicidadEdicionEmailJS("no");
+                                        enviarCorreoEdicionEmailJS();
+                                        editarEventoFirestore(nombreEventoReserva, claveEventoReserva, fechaEventoReserva, horaEventoReserva, duracionEventoReserva, modalidadEventoReserva, ubicacionPlataformaReserva, lugarPresencialReserva, planEventoReserva, observacionesEventoReserva, nombreOrganizadorReserva, emailOrganizadorReserva, capituloRaizString, telefonoOrganizadorReserva, nombrePonenteReserva, emailPonenteReserva, telefonoPonenteReserva, publicidadComiteReserva, observacionesPublicidadReserva, fotoPonenteURLReserva);
+                                        
+                                        var datosReservaContainer = document.getElementById("datos-reserva-container");
+                                        datosReservaContainer.style.display = "none";
+                                        var content = document.getElementById("acordeon2-content");
+                                        content.style.display = "none";
+                                    }
+                                });
+                            } else {
+                                enviarCorreoEdicionEmailJS();
+                                editarEventoFirestore(nombreEventoReserva, claveEventoReserva, fechaEventoReserva, horaEventoReserva, duracionEventoReserva, modalidadEventoReserva, ubicacionPlataformaReserva, lugarPresencialReserva, planEventoReserva, observacionesEventoReserva, nombreOrganizadorReserva, emailOrganizadorReserva, capituloRaizString, telefonoOrganizadorReserva, nombrePonenteReserva, emailPonenteReserva, telefonoPonenteReserva, publicidadComiteReserva, observacionesPublicidadReserva, fotoPonenteURLReserva);
+                                
+                                var datosReservaContainer = document.getElementById("datos-reserva-container");
+                                datosReservaContainer.style.display = "none";
+                                var content = document.getElementById("acordeon2-content");
+                                content.style.display = "none";
+                            }
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: '¡NO EXISTE EL EVENTO QUE BUSCAS!',
+                        text: 'Verifica que estés escribiendo una clave de evento que de verdad exista.',
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar',
+                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                        imageWidth: 120,
+                        imageHeight: 235,
+                        imagePosition: 'top-start'
+                    });
+                }
+            }).catch(function(error) {
+                console.log("Error al consultar Firebase: " + error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Hubo en error con el código, consulta al administrador/creador del sistema.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
             });
-            return;
-          }
-        }).catch(function(error) {
-          // Manejar errores de consulta aquí
-          // Mostrar una alerta tipo SweetAlert en caso de error
-          console.log("Error al consultar Firebase: " + error);
-          Swal.fire({
-            title: 'Error',
-            text: 'Hubo en error con el código, consulta al administrador/creador del sistema.',
-            icon: 'error',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-          return;
-        });
-      }
+        }
     }
 
+
     // Esta función elimina cada reserva que el usuario desee eliminar, también 
-    function eliminarReserva() {
-        // Obtener los valores de los campos a verificar
-        var fechaEventoEliminarsub = document.getElementById("fecha-evento-eliminar").value;
-        var horaEventoEliminar = document.getElementById("hora-evento-eliminar").value;
-        var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
+function eliminarReserva() {
+    // Obtener los valores de los campos a verificar
+    var fechaEventoEliminarsub = document.getElementById("fecha-evento-eliminar").value;
+    var horaEventoEliminar = document.getElementById("hora-evento-eliminar").value;
+    var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
 
-        // Crear una lista para almacenar los nombres de los campos faltantes
-        var camposFaltantes = [];
+    // Crear una lista para almacenar los nombres de los campos faltantes
+    var camposFaltantes = [];
 
-        // Verificar si cada campo está vacío y agregar su nombre a la lista si es el caso
-        if (fechaEventoEliminarsub.trim() === "") {
-            camposFaltantes.push("Fecha del evento. ");
-        }
-        if (horaEventoEliminar.trim() === "") {
-            camposFaltantes.push("Hora del evento. ");
-        }
-        if (claveEventoEliminar.trim() === "") {
-            camposFaltantes.push("Clave del evento.");
-        }
-        var fechaEventoEliminarSub = new Date(document.getElementById("fecha-evento-eliminar").value);
-        // Si hay campos faltantes, mostrar mensaje de error personalizado
-        if (camposFaltantes.length > 0) {
-            var mensajeError = "Faltan campos por diligenciar:\n\n" + camposFaltantes.join("\n");
-            Swal.fire({
+    // Verificar si cada campo está vacío y agregar su nombre a la lista si es el caso
+    if (fechaEventoEliminarsub.trim() === "") {
+        camposFaltantes.push("Fecha del evento. ");
+    }
+    if (horaEventoEliminar.trim() === "") {
+        camposFaltantes.push("Hora del evento. ");
+    }
+    if (claveEventoEliminar.trim() === "") {
+        camposFaltantes.push("Clave del evento.");
+    }
+    var fechaEventoEliminarSub = new Date(document.getElementById("fecha-evento-eliminar").value);
+    
+    // Si hay campos faltantes, mostrar mensaje de error personalizado
+    if (camposFaltantes.length > 0) {
+        var mensajeError = "Faltan campos por diligenciar:\n\n" + camposFaltantes.join("\n");
+        Swal.fire({
             title: '¡NO HAS DILIGENCIADO TODOS LOS CAMPOS!',
             text: mensajeError,
             icon: 'warning',
             confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-          });
-        } else {
-            // Si no hay campos faltantes, proceder con la eliminación de la reserva
-            Swal.fire({
+            imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        });
+    } else {
+        // Si no hay campos faltantes, proceder con la eliminación de la reserva
+        Swal.fire({
             title: '¿CONFIRMAS QUE DESEAS ELIMINAR LA RESERVA?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'CONFIRMO',
             cancelButtonText: 'NO',
-            imageUrl: 'https://i.ibb.co/VSh1RT4/AVATAR-SEGUROELIMINAR-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-            }).then((result) => {
+            imageUrl: 'https://i.ibb.co/VSh1RT4/AVATAR-SEGUROELIMINAR-removebg-preview.png',
+            imageWidth: 120,
+            imageHeight: 235,
+            imagePosition: 'top-start'
+        }).then((result) => {
             // Si el usuario hizo clic en el botón "CONFIRMO", proceder a eliminar la reserva
             if (result.isConfirmed) {
-                // Realizar la eliminación de la reserva en la base de datos
                 var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
                 console.log(claveEventoEliminar);
+                
                 // Obtener una referencia al documento que se desea eliminar
                 var reservaRef = firebase.firestore().collection("reservas").doc(claveEventoEliminar);
 
                 // Verificar si el documento existe antes de intentar eliminarlo
                 reservaRef.get().then((doc) => {
-                  if (doc.exists) {
-                    // El documento existe, proceder con la eliminación
-                    var fechaReservaSub = new Date(doc.data().fechaEvento);
-                    var fechaReserva = fechaReservaSub.toISOString().slice(0, 10);
-                    var fechaEventoEliminar = fechaEventoEliminarSub.toISOString().slice(0, 10);
-                    var horaReserva = doc.data().horaEvento;
-                    var duracionReserva = doc.data().duracionEvento;
-                    var nombreEventoReserva= doc.data().nombreEvento;
-                    var nombreOrganizadorReserva = doc.data().nombreOrganizador;
-                    var correoReserva = doc.data().emailOrganizador;
-                    var planEvento = doc.data().planEvento;
-                    var capituloEliminar = doc.data().capitulo;
-                    var observacionesReserva = doc.data().observacionesEvento;
-                    var modalidadReserva = doc.data().modalidadEvento;
-                    var ubicacionOPlataforma = doc.data().ubicacionPlataforma;
-                    var nombrePonente = doc.data().nombrePonente;
-                    // Dividir la hora y los minutos en variables
-                    var partesHora = horaEventoEliminar.split(":");
-                    var hora = parseInt(partesHora[0], 10); // Convertir la hora en número entero
-                    var minutos = parseInt(partesHora[1], 10); // Convertir los minutos en número entero
-                    // Calcular el número total de minutos después de la medianoche
-                    var minutosDespuesDeMedianoche = hora * 60 + minutos;
-                    // Verificar si la fecha es la apropiada
-                    if (fechaReserva !== fechaEventoEliminar) {
-                      Swal.fire({
-                        title: '¡FECHA INCORRECTA!',
-                        text: 'La fecha del evento debe ser exactamente igual a la que tiene la reserva.',
-                        icon: 'warning',
-                        confirmButtonText: 'Aceptar',
-                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-                        imageWidth: 120, // Ancho de la imagen en píxeles
-                        imageHeight: 235, // Alto de la imagen en píxeles
-                        imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-                      });
-                      return; // Detener la edición de la reserva
+                    if (doc.exists) {
+                        // El documento existe, proceder con la extracción de datos
+                        var fechaReservaSub = new Date(doc.data().fechaEvento);
+                        var fechaReserva = fechaReservaSub.toISOString().slice(0, 10);
+                        var fechaEventoEliminar = fechaEventoEliminarSub.toISOString().slice(0, 10);
+                        var horaReserva = doc.data().horaEvento;
+                        var duracionReserva = doc.data().duracionEvento;
+                        var nombreEventoReserva = doc.data().nombreEvento;
+                        var nombreOrganizadorReserva = doc.data().nombreOrganizador;
+                        var correoReserva = doc.data().emailOrganizador;
+                        var planEvento = doc.data().planEvento;
+                        var observacionesReserva = doc.data().observacionesEvento;
+                        var modalidadReserva = doc.data().modalidadEvento;
+                        var ubicacionOPlataforma = doc.data().ubicacionPlataforma;
+                        var nombrePonente = doc.data().nombrePonente;
+
+                        // --- NUEVA ADAPTACIÓN MULTICAPÍTULO PARA ELIMINACIÓN ---
+                        // Traemos el array capitulosOrganizadores almacenado en Firestore. 
+                        // Si por alguna razón el documento antiguo no lo tiene, recurrimos al campo clásico como respaldo en un array de respaldo.
+                        var capitulosOrganizadoresFirebase = doc.data().capitulosOrganizadores || (doc.data().capitulo ? [doc.data().capitulo] : []);
+
+                        // Dividir la hora y los minutos en variables
+                        var partesHora = horaEventoEliminar.split(":");
+                        var hora = parseInt(partesHora[0], 10);
+                        var minutos = parseInt(partesHora[1], 10);
+                        
+                        // Calcular el número total de minutos después de la medianoche
+                        var minutosDespuesDeMedianoche = hora * 60 + minutos;
+                        
+                        // Verificar si la fecha es la apropiada
+                        if (fechaReserva !== fechaEventoEliminar) {
+                            Swal.fire({
+                                title: '¡FECHA INCORRECTA!',
+                                text: 'La fecha del evento debe ser exactamente igual a la que tiene la reserva.',
+                                icon: 'warning',
+                                confirmButtonText: 'Aceptar',
+                                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                                imageWidth: 120,
+                                imageHeight: 235,
+                                imagePosition: 'top-start'
+                            });
+                            return;
+                        }
+                        
+                        if (horaReserva !== '' + minutosDespuesDeMedianoche) {
+                            Swal.fire({
+                                title: '¡HORA INCORRECTA!',
+                                text: 'La hora del evento debe ser exactamente igual a la que tiene la reserva.',
+                                icon: 'warning',
+                                confirmButtonText: 'Aceptar',
+                                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                                imageWidth: 120,
+                                imageHeight: 235,
+                                imagePosition: 'top-start'
+                            });
+                            return;
+                        }
+                        
+                        // Eliminar físicamente el documento de Firestore
+                        reservaRef.delete().then(() => {
+                            console.log("Reserva eliminada con éxito.");
+                            
+                            // Pasamos la colección de capítulos recuperada al despachador de correo electrónico
+                            enviarCorreoEliminarEmailJS(claveEventoEliminar, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulosOrganizadoresFirebase, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente);
+                            
+                            // Resetear los campos del formulario
+                            document.getElementById("fecha-evento-eliminar").value = "";
+                            document.getElementById("hora-evento-eliminar").value = "";
+                            document.getElementById("clave-evento-eliminar").value = "";
+                            
+                            // Ocultar el acordeón 3
+                            var content = document.getElementById("acordeon3-content");
+                            content.style.display = "none";
+                            
+                            // Mostrar mensaje de éxito
+                            mostrarMensajeEliminar();
+                        }).catch((error) => {
+                            console.error("NO SE PUDO ELIMINAR LA RESERVA", error);
+                            Swal.fire({
+                                title: '¡ERROR!',
+                                text: 'Ha ocurrido un error al eliminar la reserva. Inténtalo nuevamente más tarde o ponte en contacto con el administrador de la plataforma.',
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                                imageWidth: 120,
+                                imageHeight: 235,
+                                imagePosition: 'top-start'
+                            });
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'NO EXISTE ESTA RESERVA',
+                            text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que estás diligenciando la clave correcta.',
+                            icon: 'warning',
+                            confirmButtonText: 'Aceptar',
+                            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                            imageWidth: 120,
+                            imageHeight: 235,
+                            imagePosition: 'top-start'
+                        });
                     }
-                    if (horaReserva !== '' + minutosDespuesDeMedianoche) {
-                      Swal.fire({
-                        title: '¡HORA INCORRECTA!',
-                        text: 'La hora del evento debe ser exactamente igual a la que tiene la reserva.',
-                        icon: 'warning',
-                        confirmButtonText: 'Aceptar',
-                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-                        imageWidth: 120, // Ancho de la imagen en píxeles
-                        imageHeight: 235, // Alto de la imagen en píxeles
-                        imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-                      });
-                      return; // Detener la edición de la reserva
-                    }
-                    reservaRef.delete().then(() => {
-                      // Eliminación exitosa
-                      console.log("Reserva eliminada con éxito.");
-                      // Resetear los campos del acordeón 3 a sus valores por defect luego de enviar correo.
-                      enviarCorreoEliminarEmailJS(claveEventoEliminar,nombreOrganizadorReserva,correoReserva,nombreEventoReserva,fechaReserva,horaReserva,duracionReserva,capituloEliminar,planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente);
-                      document.getElementById("fecha-evento-eliminar").value = "";
-                      document.getElementById("hora-evento-eliminar").value = "";
-                      document.getElementById("clave-evento-eliminar").value = "";
-                      // Ocultar el acordeón 3
-                      var content = document.getElementById("acordeon3-content");
-                      content.style.display = "none";
-                      // Mostrar mensaje de éxito
-                      mostrarMensajeEliminar();
-                      // Ocultar el acordeón 3
-                      var content = document.getElementById("acordeon3-content");
-                      content.style.display = "none";
-                      // Mostrar mensaje de éxito
-                      //mostrarMensajeEliminar();
-                    }).catch((error) => {
-                      // Error al intentar eliminar el documento
-                      console.error("NO SE PUDO ELIMINAR LA RESERVA", error);
-                      Swal.fire({
+                }).catch((error) => {
+                    console.error("ERROR AL CONSULTAR LA RESERVA", error);
+                    Swal.fire({
                         title: '¡ERROR!',
-                        text: 'Ha ocurrido un error al eliminar la reserva. Inténtalo nuevamente más tarde o ponte en contacto con el administrador de la plataforma.',
+                        text: 'Ha ocurrido un error al consultar la reserva. Inténtalo nuevamente más tarde o ponte en contacto con el administrador de la plataforma',
                         icon: 'error',
                         confirmButtonText: 'Aceptar',
-                        imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png', // URL de la imagen
-                        imageWidth: 120, // Ancho de la imagen en píxeles
-                        imageHeight: 235, // Alto de la imagen en píxeles
-                        imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-                      });
+                        imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                        imageWidth: 120,
+                        imageHeight: 235,
+                        imagePosition: 'top-start'
                     });
-                  } else {
-                    // El documento no existe, mostrar un mensaje indicando que la reserva no se encontró
-                    Swal.fire({
-                      title: 'NO EXISTE ESTA RESERVA',
-                      text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que estás diligenciando la clave correcta.',
-                      icon: 'warning',
-                      confirmButtonText: 'Aceptar',
-                      imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png', // URL de la imagen
-                      imageWidth: 120, // Ancho de la imagen en píxeles
-                      imageHeight: 235, // Alto de la imagen en píxeles
-                      imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-                    });
-                  }
-                }).catch((error) => {
-                  // Error al consultar el documento
-                  console.error("ERROR AL CONSULTAR LA RESERVA", error);
-                  Swal.fire({
-                    title: '¡ERROR!',
-                    text: 'Ha ocurrido un error al consultar la reserva. Inténtalo nuevamente más tarde o ponte en contacto con el administrador de la plataforma',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar',
-                    imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png', // URL de la imagen
-                    imageWidth: 120, // Ancho de la imagen en píxeles
-                    imageHeight: 235, // Alto de la imagen en píxeles
-                    imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
-                  });
                 });
             }
-            });
-        }
-        }
+        });
+    }
+}
 
     // Esta función permite la acción de mostrar un mensaje de éxito al momento de registrar una reserva.        
     function mostrarMensajeReservar() {
@@ -3785,18 +3737,14 @@
         var ubicacionPlataformaReserva = document.getElementById("ubicacion-plataforma-reserva").value;
         var lugarPresencialReserva = document.getElementById("lugar-presencial-reserva").value;
         var planEventoReserva = document.getElementById("plan-evento-reserva").value;
-        var observacionesEventoReserva = document.getElementById("observaciones-evento-reserva").value;
         var nombreOrganizadorReserva = document.getElementById("nombre-organizador-reserva").value;
         var emailOrganizadorReserva = document.getElementById("email-organizador-reserva").value;
-        var capituloReserva = document.getElementById("capitulo-organizador-reserva").value;
         var telefonoOrganizadorReserva = document.getElementById("telefono-organizador-reserva").value;
         var nombrePonenteReserva = document.getElementById("nombre-ponente-reserva").value;
-        var emailPonenteReserva = document.getElementById("email-ponente-reserva").value;
-        var telefonoPonenteReserva = document.getElementById("telefono-ponente-reserva").value;
         var publicidadComiteReserva = document.getElementById("publicidad-comite-reserva").value;
         var fotoPonenteReserva = document.getElementById("foto-ponente-reserva").value;
         
-        // Verificar si cada campo está vacío y agregar su nombre a la lista si es el caso
+        // Verificar si cada campo está vacío
         if (nombreEventoReserva.trim() === "") {
             camposFaltantes.push("Nombre del evento");
         }
@@ -3824,9 +3772,12 @@
         if (emailOrganizadorReserva.trim() === "") {
             camposFaltantes.push("Email del organizador");
         }
-        if (capituloReserva.trim() === "") {
+        
+        // --- VALIDACIÓN ADAPTADA PARA EL ARRAY GLOBAL MULTICAPÍTULO ---
+        if (arrayCapitulosEdicion.length === 0) {
             camposFaltantes.push("Capítulo");
         }
+        
         if (telefonoOrganizadorReserva.trim() === "") {
             camposFaltantes.push("Teléfono del organizador");
         }
@@ -3834,38 +3785,38 @@
             camposFaltantes.push("Nombre del ponente");
         }
         if (publicidadComiteReserva === "") {
-          camposFaltantes.push("Publicidad SÍ/NO");
+            camposFaltantes.push("Publicidad SÍ/NO");
         }        
         if (publicidadComiteReserva === "si" && fotoPonenteReserva.trim() === "") {
-          camposFaltantes.push("Foto del ponente");
+            camposFaltantes.push("Foto del ponente");
         }
 
-        // Mostrar la alerta si hay campos faltantes con la concatenación de cada uno de ellos (los faltantes).
+        // Mostrar la alerta si hay campos faltantes
         if (camposFaltantes.length > 0) {
             var mensaje = "Faltan campos por diligenciar:\n";
             for (var i = 0; i < camposFaltantes.length; i++) {
-            mensaje += "- " + camposFaltantes[i] + "\n";
+                mensaje += "- " + camposFaltantes[i] + "\n";
             }
 
             Swal.fire({
-            title: '¡NO HAS DILIGENCIADO TODOS LOS CAMPOS!',
-            text: mensaje,
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            allowOutsideClick: true,
-            backdrop: true,  
-            allowEscapeKey: true,
-            imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png', // URL de la imagen
-            imageWidth: 120, // Ancho de la imagen en píxeles
-            imageHeight: 235, // Alto de la imagen en píxeles
-            imagePosition: 'top-start' // Posición de la imagen ('top-start', 'top', 'top-end', 'center', 'center-start', 'center-end', 'bottom-start', 'bottom', 'bottom-end')
+                title: '¡NO HAS DILIGENCIADO TODOS LOS CAMPOS!',
+                text: mensaje,
+                icon: 'warning',
+                confirmButtonText: 'Aceptar',
+                allowOutsideClick: true,
+                backdrop: true,  
+                allowEscapeKey: true,
+                imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
             });
 
             return false;
         }
 
-        return true; // Todos los campos están llenos y son válidos
-        }
+        return true; 
+    }
 
     function activarConsultaDisponibilidad() {
       // Obtener referencias a los elementos de fecha y capítulo
@@ -4397,42 +4348,59 @@
       return new Date(lunesSemana);
     }
 
-    function obtenerCorreoEdicion(correoElectronico, capitulo) {
-      // Banco de correos asociados a cada capítulo
-      const bancoCorreos = {
-          uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
-          unimagdalena: "academico_unimagdalena@aneiap.co",
-          usasm: "academico_usasm@aneiap.co",
-          unicaribe: "academico_unicaribe@aneiap.co",
-          uniatlantico: "academico_uniatlantico@aneiap.co",
-          uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
-          unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
-          cuc: "academico_cuc@aneiap.co, interventoria_cuc@aneiap.co",
-          librequilla: "academico_librequilla@aneiap.co",
-          utb: "academico_utb@aneiap.co",
-          upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
-          unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
-          ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
-          unalmed: "academico_unalmed@aneiap.co",
-          udea: "academico_udea@aneiap.co",
-          upbmed: "academico_upbmed@aneiap.co",
-          utp: "academico_utp@aneiap.co, interventoria_utp@aneiap.co",
-          unalma: "academico_unalma@aneiap.co, interventoria_unalma@aneiap.co",
-          udistrital: "academico_udistrital@aneiap.co",
-          unalbog: "academico_unalbog@aneiap.co",
-          univalle: "academico_univalle@aneiap.co",
-          icesi: "academico_icesi@aneiap.co",
-          uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
-          usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-          nacional: "academico@aneiap.co, interventoria@aneiap.co"
-      };
+    function obtenerCorreoEdicion(correoElectronico, capituloIgnorado) {
+        // Banco de correos asociados a cada capítulo
+        const bancoCorreos = {
+            uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
+            unimagdalena: "academico_unimagdalena@aneiap.co, interventoria_unimagdalena@aneiap.co",
+            usasm: "academico_usasm@aneiap.co, interventoria_usasm@aneiap.co",
+            unicaribe: "academico_unicaribe@aneiap.co, interventoria_unicaribe@aneiap.co",
+            uniatlantico: "academico_uniatlantico@aneiap.co, interventoria_uniatlantico@aneiap.co",
+            uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
+            unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
+            cuc: "academico_cuc@aneiap.co, interventoria_cuc@aneiap.co",
+            librequilla: "academico_librequilla@aneiap.co, interventoria_librequilla@aneiap.co",
+            utb: "academico_utb@aneiap.co, interventoria_utb@aneiap.co",
+            upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
+            unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
+            ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
+            unalmed: "academico_unalmed@aneiap.co, interventoria_unalmed@aneiap.co",
+            udea: "academico_udea@aneiap.co, interventoria_udea@aneiap.co",
+            upbmed: "academico_upbmed@aneiap.co, interventoria_upbmed@aneiap.co",
+            utp: "academico_utp@aneiap.co, interventoria_utp@aneiap.co",
+            unalma: "academico_unalma@aneiap.co, interventoria_unalma@aneiap.co",
+            udistrital: "academico_udistrital@aneiap.co, interventoria_udistrital@aneiap.co",
+            unalbog: "academico_unalbog@aneiap.co, interventoria_unalbog@aneiap.co",
+            univalle: "academico_univalle@aneiap.co, interventoria_univalle@aneiap.co",
+            icesi: "academico_icesi@aneiap.co, interventoria_icesi@aneiap.co",
+            uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
+            usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
+            nacional: "academico@aneiap.co, interventoria@aneiap.co"
+        };
 
-      // Correo de usuario y correos asociados al capítulo
-      const correosUsuario = correoElectronico ? correoElectronico + ", " : "";
-      const correosCapitulo = bancoCorreos[capitulo.toLowerCase()] || "";
+        let listaDestinatarios = [];
 
-      // Devolver todos los correos concatenados
-      return correosUsuario + correosCapitulo;
+        // 1. Agregar el correo del organizador principal si existe
+        if (correoElectronico) {
+            listaDestinatarios.push(correoElectronico.trim());
+        }
+
+        // 2. Recorrer en cascada todos los capítulos guardados en el array global de la consulta
+        arrayCapitulosEdicion.forEach(function(cap) {
+            if (cap) {
+                let correosCapitulo = bancoCorreos[cap.toLowerCase().trim()];
+                if (correosCapitulo) {
+                    correosCapitulo.split(",").forEach(function(correo) {
+                        let correoLimpio = correo.trim();
+                        if (!listaDestinatarios.includes(correoLimpio)) {
+                            listaDestinatarios.push(correoLimpio);
+                        }
+                    });
+                }
+            }
+        });
+
+        return listaDestinatarios.join(", ");
     }
 
     // Función para enviar el correo de edición de reserva
@@ -4548,8 +4516,8 @@
         const claveReserva = document.getElementById("clave-evento-reserva").value;
         const correoDestino = document.getElementById("email-organizador-reserva").value;
 
-        const capitulo = document.getElementById("capitulo-organizador-reserva").value;
-        const destinatario = obtenerCorreoEdicion(correoDestino, capitulo)  + ", siea@aneiap.co"; // Reemplaza con la dirección de correo del destinatario junto al bancoCorreos
+        // Obtener destinatarios académicos del array global + soporte técnico
+        const destinatario = obtenerCorreoEdicion(correoDestino) + ", siea@aneiap.co"; 
 
         const asunto = `Confirmación de edición de reserva - Clave: ${claveReserva}`;
 
@@ -4571,6 +4539,9 @@
         const duracionMinutos = duracionReserva % 60;
         const horaMilitar = `${Math.floor(horaReserva / 60).toString().padStart(2, "00")}:${(horaReserva % 60).toString().padStart(2, "00")}`;
 
+        // Extraer de la interfaz el texto de capítulos formateado (ej: "UNINORTE, UTP")
+        const textoCapitulosVisual = document.getElementById("capitulo-organizador-reserva").value;
+
         const params = {
             tituloCorreo: "Su edición de reserva ha sido confirmada ☑️",
             saludoInicial: `Estimado(a) ${document.getElementById("nombre-organizador-reserva").value}`,
@@ -4578,7 +4549,7 @@
             claveEventoReserva: claveReserva || "",
             fechaReserva: fechaReserva || "",
             horaReserva: horaMilitar || "",
-            capitulo: capitulo || "",
+            capitulo: textoCapitulosVisual || "", // Aquí viaja la lista de capítulos visibles por comas
             duracionEvento: `${duracionHoras} hora(s) ${duracionMinutos} minuto(s)`,
             planEvento: planEvento || "",
             observacionesReserva: observacionesReserva,
@@ -4592,7 +4563,6 @@
             mensajeFinal: "Recuerde que todas las claves son personales e intransferibles, no las comparta con nadie. 💙💚",
             despedida: "Cordialmente, Alessandro Villanueva Cantillo - Administrador y creador SIEA",
             to_email: destinatario,
-            //to_email: "avillanuevacantillo@gmail.com",
             subject: asunto
         };
 
@@ -5018,16 +4988,41 @@
             nacional: "proy_diseno_nacional@aneiap.co"
         };
 
-        // Determinar el correo de destino según la elección del usuario
         const claveReserva = document.getElementById("clave-evento-reserva").value;
-        const capitulo = document.getElementById("capitulo-organizador-reserva").value;
-        const correoDestino = escogioPublicidadNacional === "si" ? 
-            "proy_diseno_nacional@aneiap.co" : 
-            (bancoCorreos[capitulo.toLowerCase()] || "");
+        const correoOrganizador = document.getElementById("email-organizador-reserva").value;
+        
+        let listaDestinos = [];
+
+        // 1. Colocar de primero al organizador
+        if (correoOrganizador) {
+            listaDestinos.push(correoOrganizador.trim());
+        }
+
+        // 2. Determinar destinos según la elección nacional/capitular
+        if (escogioPublicidadNacional === "si") {
+            listaDestinos.push("proy_diseno_nacional@aneiap.co");
+        } else {
+            // Si es capitular, extraemos en cascada los correos de comunicaciones de todo el array global
+            arrayCapitulosEdicion.forEach(function(cap) {
+                if (cap) {
+                    let correoComs = bancoCorreos[cap.toLowerCase().trim()];
+                    if (correoComs) {
+                        correoComs.split(",").forEach(function(correo) {
+                            let correoLimpio = correo.trim();
+                            if (!listaDestinos.includes(correoLimpio)) {
+                                listaDestinos.push(correoLimpio);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // 3. Unificar string final con la copia obligatoria a soporte
+        const correoDestinoFinal = listaDestinos.join(", ") + ", siea@aneiap.co";
 
         const asunto = `Solicitud de Publicidad para el Evento - "${document.getElementById("nombre-evento-reserva").value}" con clave de reserva terminada en ***********${claveReserva.slice(-4)}`;
 
-        // Datos adicionales de la solicitud de publicidad
         const fechaReserva = document.getElementById("fecha-evento-reserva").value;
         const horaReserva = document.getElementById("hora-evento-reserva").value;
         const planEvento = document.getElementById("plan-evento-reserva").value;
@@ -5043,6 +5038,9 @@
             document.getElementById("lugar-presencial-reserva").value || "";
         const horaMilitar = `${Math.floor(horaReserva / 60).toString().padStart(2, "00")}:${(horaReserva % 60).toString().padStart(2, "00")}`;
 
+        // Obtener texto de capítulos legible por comas de la interfaz
+        const textoCapitulosVisual = document.getElementById("capitulo-organizador-reserva").value;
+
         const params = {
             tituloCorreo: "Solicitud de Publicidad para el Evento",
             saludoInicial: "Estimado Comité de Piezas Publicitarias",
@@ -5050,7 +5048,7 @@
             claveEventoReserva: "***********" + claveReserva.slice(-4),
             fechaReserva: fechaReserva || "",
             horaReserva: horaMilitar || "",
-            capitulo: capitulo || "",
+            capitulo: textoCapitulosVisual || "",
             duracionEvento: `${Math.floor(document.getElementById("duracion-evento-reserva").value / 60)} hora(s) ${document.getElementById("duracion-evento-reserva").value % 60} minuto(s)`,
             planEvento: planEvento || "",
             observacionesReserva: observacionesReserva,
@@ -5063,8 +5061,7 @@
             fotoPonenteURL: fotoPonenteURL,
             mensajeFinal: "Por favor, revise esta solicitud y proporcione detalles sobre la publicidad requerida.",
             despedida: "Atentamente, organizadores del espacio.",
-            to_email: correoDestino,
-            //to_email: "avillanuevacantillo@gmail.com",
+            to_email: correoDestinoFinal,
             subject: asunto
         };
 
@@ -5079,101 +5076,149 @@
             });
     }
 
-    function obtenerCorreoRegistrar(correoElectronico, capitulo) {
-        // Banco de correos asociados a cada capítulo
-        const bancoCorreos = {
-            uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
-            unimagdalena: "academico_unimagdalena@aneiap.co",
-            usasm: "academico_usasm@aneiap.co",
-            unicaribe: "academico_unicaribe@aneiap.co",
-            uniatlantico: "academico_uniatlantico@aneiap.co",
-            uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
-            unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
-            cuc: "academico_cuc@aneiap.co, interventoria_cuc@aneiap.co",
-            librequilla: "academico_librequilla@aneiap.co",
-            utb: "academico_utb@aneiap.co",
-            upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
-            unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
-            ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
-            unalmed: "academico_unalmed@aneiap.co",
-            udea: "academico_udea@aneiap.co",
-            upbmed: "academico_upbmed@aneiap.co",
-            utp: "academico_utp@aneiap.co, interventoria_utp@aneiap.co",
-            unalma: "academico_unalma@aneiap.co, interventoria_unalma@aneiap.co",
-            udistrital: "academico_udistrital@aneiap.co",
-            unalbog: "academico_unalbog@aneiap.co",
-            univalle: "academico_univalle@aneiap.co",
-            icesi: "academico_icesi@aneiap.co",
-            uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
-            usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-            nacional: "academico@aneiap.co, interventoria@aneiap.co"
-        };
+function obtenerCorreoRegistrar(correoElectronico, capitulo) {
+    // Banco de correos asociados a cada capítulo
+    const bancoCorreos = {
+        uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
+        unimagdalena: "academico_unimagdalena@aneiap.co, interventoria_unimagdalena@aneiap.co",
+        usasm: "academico_usasm@aneiap.co, interventoria_usasm@aneiap.co",
+        unicaribe: "academico_unicaribe@aneiap.co, interventoria_unicaribe@aneiap.co",
+        uniatlantico: "academico_uniatlantico@aneiap.co, interventoria_uniatlantico@aneiap.co",
+        uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
+        unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
+        cuc: "academico_cuc@aneiap.co, interventoria_cuc@aneiap.co",
+        librequilla: "academico_librequilla@aneiap.co, interventoria_librequilla@aneiap.co",
+        utb: "academico_utb@aneiap.co, interventoria_utb@aneiap.co",
+        upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
+        unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
+        ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
+        unalmed: "academico_unalmed@aneiap.co, interventoria_unalmed@aneiap.co",
+        udea: "academico_udea@aneiap.co, interventoria_udea@aneiap.co",
+        upbmed: "academico_upbmed@aneiap.co, interventoria_upbmed@aneiap.co",
+        utp: "academico_utp@aneiap.co, interventoria_utp@aneiap.co",
+        unalma: "academico_unalma@aneiap.co, interventoria_unalma@aneiap.co",
+        udistrital: "academico_udistrital@aneiap.co, interventoria_udistrital@aneiap.co",
+        unalbog: "academico_unalbog@aneiap.co, interventoria_unalbog@aneiap.co",
+        univalle: "academico_univalle@aneiap.co, interventoria_univalle@aneiap.co",
+        icesi: "academico_icesi@aneiap.co, interventoria_icesi@aneiap.co",
+        uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
+        usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
+        nacional: "academico@aneiap.co, interventoria@aneiap.co"
+    };
 
-        // Correo de usuario y correos asociados al capítulo
-        const correosUsuario = correoElectronico ? correoElectronico + ", " : "";
-        const correosCapitulo = bancoCorreos[capitulo.toLowerCase()] || "";
+    let listaDestinatarios = [];
 
-        // Devolver todos los correos concatenados
-        return correosUsuario + correosCapitulo;
+    // 1. Agregar el correo del organizador principal si existe
+    if (correoElectronico) {
+        listaDestinatarios.push(correoElectronico.trim());
     }
+
+    // 2. Normalizar el parámetro 'capitulo' para que siempre sea tratado como un Array
+    let capitulosAEvaluar = [];
+    if (Array.isArray(capitulo)) {
+        capitulosAEvaluar = capitulo;
+    } else if (capitulo && typeof capitulo === "string") {
+        capitulosAEvaluar = [capitulo];
+    } else {
+        // Respaldo por si se llama sin segundo parámetro utilizando la variable global de reservas
+        capitulosAEvaluar = [...arrayCapitulosSeleccionados];
+    }
+
+    // 3. Recorrer todos los capítulos identificados y extraer sus correos de académico e interventoría
+    capitulosAEvaluar.forEach(function(cap) {
+        if (cap && typeof cap === "string") {
+            let correosCapitulo = bancoCorreos[cap.toLowerCase().trim()];
+            if (correosCapitulo) {
+                correosCapitulo.split(",").forEach(function(correo) {
+                    let correoLimpio = correo.trim();
+                    // Evitamos duplicar correos en la lista de envío
+                    if (!listaDestinatarios.includes(correoLimpio)) {
+                        listaDestinatarios.push(correoLimpio);
+                    }
+                });
+            }
+        }
+    });
+
+    // Devolver todos los correos acumulados y limpios separados por coma
+    return listaDestinatarios.join(", ");
+}
 
     //ALESSANDRO
     // Función para enviar el correo de confirmación de eliminación de reserva usando EmailJS
-    function enviarCorreoEliminarEmailJS(claveReservaCreada, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulo, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente) {
-        // Inicializar EmailJS
-        emailjs.init("2vq1EFo6RmswvD4Ey");
+function enviarCorreoEliminarEmailJS(claveReservaCreada, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulosArray, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente) {
+    // Inicializar EmailJS
+    emailjs.init("2vq1EFo6RmswvD4Ey");
 
-        // Obtener los correos de registro asociados al capítulo y al correo del organizador
-        const destinatario = obtenerCorreoRegistrar(correoReserva, capitulo) + ", siea@aneiap.co";
-        // Asunto del correo
-        const asunto = `Confirmación de eliminación de reserva - Clave: ${claveReservaCreada}`;
+    // Sincronizar temporalmente el array de capítulos extraídos con la variable global para que obtenerCorreoRegistrar actúe en cascada
+    arrayCapitulosSeleccionados = Array.isArray(capitulosArray) ? capitulosArray : [capitulosArray];
 
-        // Convertir duración a formato horas + minutos
-        const duracionHoras = Math.floor(duracionReserva / 60);
-        const duracionMinutos = duracionReserva % 60;
+    // Obtener los correos unificados asociados a todos los capítulos que eran parte de la reserva + copia a soporte
+    const destinatario = obtenerCorreoRegistrar(correoReserva) + ", siea@aneiap.co";
+    
+    // Asunto del correo
+    const asunto = `Confirmación de eliminación de reserva - Clave: ${claveReservaCreada}`;
 
-        // Convertir minutos a formato militar (HH:MM)
-        const horasMilitar = Math.floor(horaReserva / 60);
-        const minutosMilitar = horaReserva % 60;
-        const horaMilitar = `${horasMilitar.toString().padStart(2, "00")}:${minutosMilitar.toString().padStart(2, "00")}`;
+    // Convertir duración a formato horas + minutos
+    const duracionHoras = Math.floor(duracionReserva / 60);
+    const duracionMinutos = duracionReserva % 60;
 
-        // Parámetros para la plantilla de confirmación de eliminación en EmailJS
-        const params = {
-            tituloCorreo: "Su eliminación de reserva ha sido confirmada ☑️",
-            saludoInicial: `Estimado(a) ${nombreOrganizadorReserva}`,
-            mensajeIntroduccion: `Le confirmamos que su registro de reserva para el evento "${nombreEventoReserva}" ha sido eliminado correctamente.`,
-            claveEventoReserva: claveReservaCreada || "",
-            fechaReserva: fechaReserva || "",
-            horaReserva: horaMilitar || "",
-            capitulo: capitulo || "",
-            duracionEvento: `${duracionHoras} hora(s) ${duracionMinutos} minuto(s)`,
-            planEvento: planEvento || "",
-            observacionesReserva: observacionesReserva || "No se especificaron observaciones.",
-            modalidadReserva: modalidadReserva || "",
-            ubicacionOPlataforma: ubicacionOPlataforma || "",
-            nombrePonente: nombrePonente || "",
-            mensajePublicidad: "", // Campo vacío
-            observacionesPublicidad: "", // Campo vacío
-            fotoPonenteTexto: "", // Campo vacío
-            fotoPonenteURL: "", // Campo vacío
-            mensajeFinal: "Recuerde que todas las claves son personales e intransferibles, no las comparta con nadie. 💙💚",
-            despedida: "Cordialmente, Alessandro Villanueva Cantillo - Administrador y creador SIEA",
-            to_email: destinatario, // Destinatario con los correos concatenados
-            //to_email: "avillanuevacantillo@gmail.com", // Destinatario de prueba para no enviar los correos de prueba a otras personas.
-            subject: asunto
-        };
+    // Convertir minutos a formato militar (HH:MM)
+    const horasMilitar = Math.floor(horaReserva / 60);
+    const minutosMilitar = horaReserva % 60;
+    const horaMilitar = `${horasMilitar.toString().padStart(2, "00")}:${minutosMilitar.toString().padStart(2, "00")}`;
 
-        // Enviar correo usando EmailJS con la plantilla "eliminacion_reserva"
-        emailjs.send("siea_6zoabdr", "registro_reservas", params)
-            .then((response) => {
-                console.log("Correo de confirmación de eliminación de reserva enviado exitosamente", response.status, response.text);
-                alert("Confirmación de eliminación de reserva enviada exitosamente.");
-            })
-            .catch((error) => {
-                console.error("Error al enviar el correo de confirmación de eliminación de reserva:", error);
-                alert(`Error al enviar la confirmación de eliminación de reserva: ${error.text || "Error desconocido"}. Por favor, consulta con el administrador.`);
-            });
-    }
+    // Mapeo de nombres legibles en mayúsculas para pintar de forma prolija en el cuerpo del correo
+    const diccionarioNombres = {
+        "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
+        "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
+        "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
+        "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
+        "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
+        "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
+        "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC", "nacional": "ANEIAP NACIONAL"
+    };
+
+    // Transformar los identificadores del array a texto legible unificado por comas
+    const capitulosVisualTexto = arrayCapitulosSeleccionados.map(key => diccionarioNombres[key.toLowerCase()] || key.toUpperCase()).join(", ");
+
+    // Parámetros para la plantilla de confirmación de eliminación en EmailJS
+    const params = {
+        tituloCorreo: "Su eliminación de reserva ha sido confirmada ☑️",
+        saludoInicial: `Estimado(a) ${nombreOrganizadorReserva}`,
+        mensajeIntroduccion: `Le confirmamos que su registro de reserva para el evento "${nombreEventoReserva}" ha sido eliminado correctamente.`,
+        claveEventoReserva: claveReservaCreada || "",
+        fechaReserva: fechaReserva || "",
+        horaReserva: horaMilitar || "",
+        capitulo: capitulosVisualTexto || "", // String formateado con todos los capítulos separados por comas
+        duracionEvento: `${duracionHoras} hora(s) ${duracionMinutos} minuto(s)`,
+        planEvento: planEvento || "",
+        observacionesReserva: observacionesReserva || "No se especificaron observaciones.",
+        modalidadReserva: modalidadReserva || "",
+        ubicacionOPlataforma: ubicacionOPlataforma || "",
+        nombrePonente: nombrePonente || "",
+        mensajePublicidad: "", 
+        observacionesPublicidad: "", 
+        fotoPonenteTexto: "", 
+        fotoPonenteURL: "", 
+        mensajeFinal: "Recuerde que todas las claves son personales e intransferibles, no las comparta con nadie. 💙💚",
+        despedida: "Cordialmente, Alessandro Villanueva Cantillo - Administrador y creador SIEA",
+        to_email: destinatario, 
+        subject: asunto
+    };
+
+    // Enviar correo usando EmailJS con la plantilla "registro_reservas" o la asignada
+    emailjs.send("siea_6zoabdr", "registro_reservas", params)
+        .then((response) => {
+            console.log("Correo de confirmación de eliminación de reserva enviado exitosamente", response.status, response.text);
+            alert("Confirmación de eliminación de reserva enviada exitosamente.");
+        })
+        .catch((error) => {
+            console.error("Error al enviar el correo de confirmación de eliminación de reserva:", error);
+            alert(`Error al enviar la confirmación de eliminación de reserva: ${error.text || "Error desconocido"}. Por favor, consulta con el administrador.`);
+        });
+}
+
 
     function calcularIntervalosNuevaFecha(nuevaFecha, nuevaHora, nuevaDuracion) {
       var nuevosIntervalos = [];
@@ -12109,7 +12154,6 @@ async function descargarDatosMultiplesColeccionesExcel() {
 
 </body>
 </html>
-
 
 
 
