@@ -1788,6 +1788,7 @@
           <!-- Botón para ocultar o mostrar la tabla de evaluaciones -->
           <button id="toggleEvaluaciones" onclick="toggleEvaluaciones()">Mostrar tabla de evaluaciones</button>
           <button id="toggleEvaluaciones" onclick="GenerarListadoAsistencia()">Generar listado histórico de asistencia</button>
+          <button id="btnEliminarDuplicados" onclick="eliminarRespuestasDuplicadas()" style="background-color: #d90429; color: white; font-weight: bold;">Eliminar respuestas duplicadas</button>
           <!-- Mensaje de estado de la tabla -->
           <p id="estadoTablaEvaluaciones" style="text-align: center; display: block;">La tabla de evaluaciones de satisfacción está oculta</p>
           <!-- Tabla con las evaluaciones -->
@@ -2062,6 +2063,190 @@
     fechaInicialInput.addEventListener("change", actualizarNombresEspacios);
     fechaFinalInput.addEventListener("change", actualizarNombresEspacios);
     document.getElementById("nombre-espacio-actualizar").addEventListener("change", ActualizarCamposConNombreEspacio);
+
+    function eliminarRespuestasDuplicadas() {
+        var nombreEvento = document.getElementById("nombre-espacio-consultar-evaluaciones").value;
+        var fechaInicial = document.getElementById("fecha-inicial-evaluaciones").value;
+        var fechaFinal = document.getElementById("fecha-final-evaluaciones").value;
+
+        if (!nombreEvento) {
+            Swal.fire({
+                icon: 'warning',
+                title: '¡FALTA SELECCIONAR EL EVENTO!',
+                text: 'Por favor, selecciona un evento del listado para poder evaluar y eliminar sus duplicados.',
+                confirmButtonText: 'Aceptar'
+            });
+            return;
+        }
+
+        // Alerta de procesamiento inicial
+        Swal.fire({
+            title: 'Procesando depuración...',
+            text: 'Estamos buscando y eliminando registros duplicados con el mismo nombre y correo.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        var reservasRef = firebase.firestore().collection("reservas");
+        var consultaEvaluaciones = reservasRef.where("nombreEvento", "==", nombreEvento)
+            .where("fechaEvento", ">=", fechaInicial)
+            .where("fechaEvento", "<=", fechaFinal)
+            .where("capitulosOrganizadores", "array-contains", capituloUsuario);
+
+        consultaEvaluaciones.get().then(function(querySnapshot) {
+            if (querySnapshot.empty) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'SIN REGISTROS',
+                    text: 'No se encontraron documentos vigentes para este espacio.',
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            let promesasActualizacion = [];
+            let listaDuplicadosEliminados = []; // Array para almacenar los nombres de los eliminados
+
+            querySnapshot.forEach(function(doc) {
+                var data = doc.data();
+
+                // Convertimos las cadenas unificadas por pipe en arreglos independientes
+                var asistentes = (data.asistentes || "").split("|");
+                var correosAsistentes = (data.correosAsistentes || "").split("|");
+                var telefonosAsistentes = (data.telefonosAsistentes || "").split("|");
+                var respuestas1 = (data.respuestas1 || "").split("|");
+                var respuestas2 = (data.respuestas2 || "").split("|");
+                var respuestas3 = (data.respuestas3 || "").split("|");
+                var comentarios = (data.comentarios || "").split("|");
+
+                // Remover el último elemento vacío debido al split final
+                if (asistentes[asistentes.length - 1] === "") asistentes.pop();
+                if (correosAsistentes[correosAsistentes.length - 1] === "") correosAsistentes.pop();
+                if (telefonosAsistentes[telefonosAsistentes.length - 1] === "") telefonosAsistentes.pop();
+                if (respuestas1[respuestas1.length - 1] === "") respuestas1.pop();
+                if (respuestas2[respuestas2.length - 1] === "") respuestas2.pop();
+                if (respuestas3[respuestas3.length - 1] === "") respuestas3.pop();
+                if (comentarios[comentarios.length - 1] === "") comentarios.pop();
+
+                var registrosUnicos = [];
+                var indicesEliminar = [];
+
+                // Identificar duplicados basados en par: Nombre + Correo (manteniendo el primero libre)
+                for (var i = 0; i < asistentes.length; i++) {
+                    var llaveUnica = asistentes[i].trim().toLowerCase() + "||" + correosAsistentes[i].trim().toLowerCase();
+                    
+                    if (registrosUnicos.includes(llaveUnica)) {
+                        indicesEliminar.push(i);
+                        // Guardamos la información visible del duplicado que se va a borrar
+                        listaDuplicadosEliminados.push(`- ${asistentes[i].trim()} (${correosAsistentes[i].trim().toLowerCase()})`);
+                    } else {
+                        registrosUnicos.push(llaveUnica);
+                    }
+                }
+
+                if (indicesEliminar.length === 0) {
+                    return; // No hay registros duplicados en este documento
+                }
+
+                // Eliminamos las casillas de atrás hacia adelante para no corromper los índices dinámicos
+                for (var j = indicesEliminar.length - 1; j >= 0; j--) {
+                    var idx = indicesEliminar[j];
+                    asistentes.splice(idx, 1);
+                    correosAsistentes.splice(idx, 1);
+                    telefonosAsistentes.splice(idx, 1);
+                    respuestas1.splice(idx, 1);
+                    respuestas2.splice(idx, 1);
+                    respuestas3.splice(idx, 1);
+                    comentarios.splice(idx, 1);
+                }
+
+                // --- RECALCULAR CONTADORES NPS DESDE CERO ---
+                var nuevosDetractores = 0;
+                var nuevosPasivos = 0;
+                var nuevosPromotores = 0;
+
+                function clasificarPuntuacion(valor) {
+                    var score = parseInt(valor);
+                    if (!isNaN(score)) {
+                        if (score >= 0 && score <= 6) nuevosDetractores++;
+                        else if (score === 7 || score === 8) nuevosPasivos++;
+                        else if (score === 9 || score === 10) nuevosPromotores++;
+                    }
+                }
+
+                respuestas1.forEach(clasificarPuntuacion);
+                respuestas2.forEach(clasificarPuntuacion);
+                respuestas3.forEach(clasificarPuntuacion);
+
+                var totalCriterios = nuevosPromotores + nuevosPasivos + nuevosDetractores;
+                var nuevaSatisfaccion = totalCriterios > 0 ? (nuevosPromotores - nuevosDetractores) / totalCriterios : 0;
+
+                var dataActualizada = {
+                    asistentes: asistentes.length > 0 ? asistentes.join("|") + "|" : "",
+                    correosAsistentes: correosAsistentes.length > 0 ? correosAsistentes.join("|") + "|" : "",
+                    telefonosAsistentes: telefonosAsistentes.length > 0 ? telefonosAsistentes.join("|") + "|" : "",
+                    respuestas1: respuestas1.length > 0 ? respuestas1.join("|") + "|" : "",
+                    respuestas2: respuestas2.length > 0 ? respuestas2.join("|") + "|" : "",
+                    respuestas3: respuestas3.length > 0 ? respuestas3.join("|") + "|" : "",
+                    comentarios: comentarios.length > 0 ? comentarios.join("|") + "|" : "",
+                    detractores: nuevosDetractores,
+                    pasivos: nuevosPasivos,
+                    promotores: nuevosPromotores,
+                    satisfaccion: nuevaSatisfaccion
+                };
+
+                var p = reservasRef.doc(doc.id).set(dataActualizada, { merge: true });
+                promesasActualizacion.push(p);
+            });
+
+            // --- VALIDACIÓN DE SI EN VERDAD HUBO DUPLICADOS ---
+            if (listaDuplicadosEliminados.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'TODO LIMPIO ✨',
+                    text: 'No tienes respuestas duplicadas en este espacio.',
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            // Si hay actualizaciones en cola, esperamos a Firestore
+            Promise.all(promesasActualizacion).then(function() {
+                // Construimos el listado en formato HTML interactivo para la alerta
+                let htmlListado = '<div style="text-align: left; max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 14px; margin-top: 10px;">';
+                htmlListado += listaDuplicadosEliminados.join("<br>");
+                htmlListado += '</div>';
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡DEPURACIÓN COMPLETADA!',
+                    html: `<p>Se eliminaron los excesos duplicados conservando la primera respuesta original de cada asistente.</p>
+                        <p style="font-weight: bold; margin-bottom: 5px;">Respuestas eliminadas:</p>${htmlListado}`,
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    // Refrescar automáticamente la tabla con la data limpia
+                    consultarEvaluaciones();
+                });
+            }).catch(function(err) {
+                console.error("Error al actualizar la base de datos durante la depuración:", err);
+                Swal.fire({
+                    icon: 'error',
+                    title: '¡ERROR!',
+                    text: 'No se pudo procesar la eliminación de duplicados en el servidor de base de datos.',
+                    confirmButtonText: 'Aceptar'
+                });
+            });
+
+        }).catch(function(error) {
+            console.error("Error consultando evaluaciones para limpieza:", error);
+            Swal.fire({
+                icon: 'error',
+                title: '¡ERROR!',
+                text: 'Ocurrió un fallo de conexión al consultar los datos originales.',
+                confirmButtonText: 'Aceptar'
+            });
+        });
+    }
 
     // Primera feature: Función para actualizar los nombres de los espacios según las fechas seleccionadas
     function actualizarNombresEspacios() {
@@ -5076,149 +5261,148 @@ function eliminarReserva() {
             });
     }
 
-function obtenerCorreoRegistrar(correoElectronico, capitulo) {
-    // Banco de correos asociados a cada capítulo
-    const bancoCorreos = {
-        uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
-        unimagdalena: "academico_unimagdalena@aneiap.co, interventoria_unimagdalena@aneiap.co",
-        usasm: "academico_usasm@aneiap.co, interventoria_usasm@aneiap.co",
-        unicaribe: "academico_unicaribe@aneiap.co, interventoria_unicaribe@aneiap.co",
-        uniatlantico: "academico_uniatlantico@aneiap.co, interventoria_uniatlantico@aneiap.co",
-        uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
-        unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
-        cuc: "academico_cuc@aneiap.co, interventoria_cuc@aneiap.co",
-        librequilla: "academico_librequilla@aneiap.co, interventoria_librequilla@aneiap.co",
-        utb: "academico_utb@aneiap.co, interventoria_utb@aneiap.co",
-        upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
-        unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
-        ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
-        unalmed: "academico_unalmed@aneiap.co, interventoria_unalmed@aneiap.co",
-        udea: "academico_udea@aneiap.co, interventoria_udea@aneiap.co",
-        upbmed: "academico_upbmed@aneiap.co, interventoria_upbmed@aneiap.co",
-        utp: "academico_utp@aneiap.co, interventoria_utp@aneiap.co",
-        unalma: "academico_unalma@aneiap.co, interventoria_unalma@aneiap.co",
-        udistrital: "academico_udistrital@aneiap.co, interventoria_udistrital@aneiap.co",
-        unalbog: "academico_unalbog@aneiap.co, interventoria_unalbog@aneiap.co",
-        univalle: "academico_univalle@aneiap.co, interventoria_univalle@aneiap.co",
-        icesi: "academico_icesi@aneiap.co, interventoria_icesi@aneiap.co",
-        uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
-        usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-        nacional: "academico@aneiap.co, interventoria@aneiap.co"
-    };
+    function obtenerCorreoRegistrar(correoElectronico, capitulo) {
+        // Banco de correos asociados a cada capítulo
+        const bancoCorreos = {
+            uniguajira: "academico_uniguajira@aneiap.co, interventoria_uniguajira@aneiap.co",
+            unimagdalena: "academico_unimagdalena@aneiap.co, interventoria_unimagdalena@aneiap.co",
+            usasm: "academico_usasm@aneiap.co, interventoria_usasm@aneiap.co",
+            unicaribe: "academico_unicaribe@aneiap.co, interventoria_unicaribe@aneiap.co",
+            uniatlantico: "academico_uniatlantico@aneiap.co, interventoria_uniatlantico@aneiap.co",
+            uninorte: "academico_uninorte@aneiap.co, interventoria_uninorte@aneiap.co",
+            unisimon: "academico_unisimon@aneiap.co, interventoria_unisimon@aneiap.co",
+            cuc: "academico_cuc@aneiap.co, interventoria_cuc@aneiap.co",
+            librequilla: "academico_librequilla@aneiap.co, interventoria_librequilla@aneiap.co",
+            utb: "academico_utb@aneiap.co, interventoria_utb@aneiap.co",
+            upbmonteria: "academico_upbmonteria@aneiap.co, interventoria_upbmonteria@aneiap.co",
+            unicordoba: "academico_unicordoba@aneiap.co, interventoria_unicordoba@aneiap.co",
+            ufps: "academico_ufps@aneiap.co, interventoria_ufps@aneiap.co",
+            unalmed: "academico_unalmed@aneiap.co, interventoria_unalmed@aneiap.co",
+            udea: "academico_udea@aneiap.co, interventoria_udea@aneiap.co",
+            upbmed: "academico_upbmed@aneiap.co, interventoria_upbmed@aneiap.co",
+            utp: "academico_utp@aneiap.co, interventoria_utp@aneiap.co",
+            unalma: "academico_unalma@aneiap.co, interventoria_unalma@aneiap.co",
+            udistrital: "academico_udistrital@aneiap.co, interventoria_udistrital@aneiap.co",
+            unalbog: "academico_unalbog@aneiap.co, interventoria_unalbog@aneiap.co",
+            univalle: "academico_univalle@aneiap.co, interventoria_univalle@aneiap.co",
+            icesi: "academico_icesi@aneiap.co, interventoria_icesi@aneiap.co",
+            uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
+            usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
+            nacional: "academico@aneiap.co, interventoria@aneiap.co"
+        };
 
-    let listaDestinatarios = [];
+        let listaDestinatarios = [];
 
-    // 1. Agregar el correo del organizador principal si existe
-    if (correoElectronico) {
-        listaDestinatarios.push(correoElectronico.trim());
-    }
-
-    // 2. Normalizar el parámetro 'capitulo' para que siempre sea tratado como un Array
-    let capitulosAEvaluar = [];
-    if (Array.isArray(capitulo)) {
-        capitulosAEvaluar = capitulo;
-    } else if (capitulo && typeof capitulo === "string") {
-        capitulosAEvaluar = [capitulo];
-    } else {
-        // Respaldo por si se llama sin segundo parámetro utilizando la variable global de reservas
-        capitulosAEvaluar = [...arrayCapitulosSeleccionados];
-    }
-
-    // 3. Recorrer todos los capítulos identificados y extraer sus correos de académico e interventoría
-    capitulosAEvaluar.forEach(function(cap) {
-        if (cap && typeof cap === "string") {
-            let correosCapitulo = bancoCorreos[cap.toLowerCase().trim()];
-            if (correosCapitulo) {
-                correosCapitulo.split(",").forEach(function(correo) {
-                    let correoLimpio = correo.trim();
-                    // Evitamos duplicar correos en la lista de envío
-                    if (!listaDestinatarios.includes(correoLimpio)) {
-                        listaDestinatarios.push(correoLimpio);
-                    }
-                });
-            }
+        // 1. Agregar el correo del organizador principal si existe
+        if (correoElectronico) {
+            listaDestinatarios.push(correoElectronico.trim());
         }
-    });
 
-    // Devolver todos los correos acumulados y limpios separados por coma
-    return listaDestinatarios.join(", ");
-}
+        // 2. Normalizar el parámetro 'capitulo' para que siempre sea tratado como un Array
+        let capitulosAEvaluar = [];
+        if (Array.isArray(capitulo)) {
+            capitulosAEvaluar = capitulo;
+        } else if (capitulo && typeof capitulo === "string") {
+            capitulosAEvaluar = [capitulo];
+        } else {
+            // Respaldo por si se llama sin segundo parámetro utilizando la variable global de reservas
+            capitulosAEvaluar = [...arrayCapitulosSeleccionados];
+        }
+
+        // 3. Recorrer todos los capítulos identificados y extraer sus correos de académico e interventoría
+        capitulosAEvaluar.forEach(function(cap) {
+            if (cap && typeof cap === "string") {
+                let correosCapitulo = bancoCorreos[cap.toLowerCase().trim()];
+                if (correosCapitulo) {
+                    correosCapitulo.split(",").forEach(function(correo) {
+                        let correoLimpio = correo.trim();
+                        // Evitamos duplicar correos en la lista de envío
+                        if (!listaDestinatarios.includes(correoLimpio)) {
+                            listaDestinatarios.push(correoLimpio);
+                        }
+                    });
+                }
+            }
+        });
+
+        // Devolver todos los correos acumulados y limpios separados por coma
+        return listaDestinatarios.join(", ");
+    }
 
     //ALESSANDRO
     // Función para enviar el correo de confirmación de eliminación de reserva usando EmailJS
-function enviarCorreoEliminarEmailJS(claveReservaCreada, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulosArray, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente) {
-    // Inicializar EmailJS
-    emailjs.init("2vq1EFo6RmswvD4Ey");
+    function enviarCorreoEliminarEmailJS(claveReservaCreada, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulosArray, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente) {
+        // Inicializar EmailJS
+        emailjs.init("2vq1EFo6RmswvD4Ey");
 
-    // Sincronizar temporalmente el array de capítulos extraídos con la variable global para que obtenerCorreoRegistrar actúe en cascada
-    arrayCapitulosSeleccionados = Array.isArray(capitulosArray) ? capitulosArray : [capitulosArray];
+        // Sincronizar temporalmente el array de capítulos extraídos con la variable global para que obtenerCorreoRegistrar actúe en cascada
+        arrayCapitulosSeleccionados = Array.isArray(capitulosArray) ? capitulosArray : [capitulosArray];
 
-    // Obtener los correos unificados asociados a todos los capítulos que eran parte de la reserva + copia a soporte
-    const destinatario = obtenerCorreoRegistrar(correoReserva) + ", siea@aneiap.co";
-    
-    // Asunto del correo
-    const asunto = `Confirmación de eliminación de reserva - Clave: ${claveReservaCreada}`;
+        // Obtener los correos unificados asociados a todos los capítulos que eran parte de la reserva + copia a soporte
+        const destinatario = obtenerCorreoRegistrar(correoReserva) + ", siea@aneiap.co";
+        
+        // Asunto del correo
+        const asunto = `Confirmación de eliminación de reserva - Clave: ${claveReservaCreada}`;
 
-    // Convertir duración a formato horas + minutos
-    const duracionHoras = Math.floor(duracionReserva / 60);
-    const duracionMinutos = duracionReserva % 60;
+        // Convertir duración a formato horas + minutos
+        const duracionHoras = Math.floor(duracionReserva / 60);
+        const duracionMinutos = duracionReserva % 60;
 
-    // Convertir minutos a formato militar (HH:MM)
-    const horasMilitar = Math.floor(horaReserva / 60);
-    const minutosMilitar = horaReserva % 60;
-    const horaMilitar = `${horasMilitar.toString().padStart(2, "00")}:${minutosMilitar.toString().padStart(2, "00")}`;
+        // Convertir minutos a formato militar (HH:MM)
+        const horasMilitar = Math.floor(horaReserva / 60);
+        const minutosMilitar = horaReserva % 60;
+        const horaMilitar = `${horasMilitar.toString().padStart(2, "00")}:${minutosMilitar.toString().padStart(2, "00")}`;
 
-    // Mapeo de nombres legibles en mayúsculas para pintar de forma prolija en el cuerpo del correo
-    const diccionarioNombres = {
-        "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
-        "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
-        "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
-        "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
-        "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
-        "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
-        "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC", "nacional": "ANEIAP NACIONAL"
-    };
+        // Mapeo de nombres legibles en mayúsculas para pintar de forma prolija en el cuerpo del correo
+        const diccionarioNombres = {
+            "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
+            "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
+            "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
+            "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
+            "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
+            "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
+            "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC", "nacional": "ANEIAP NACIONAL"
+        };
 
-    // Transformar los identificadores del array a texto legible unificado por comas
-    const capitulosVisualTexto = arrayCapitulosSeleccionados.map(key => diccionarioNombres[key.toLowerCase()] || key.toUpperCase()).join(", ");
+        // Transformar los identificadores del array a texto legible unificado por comas
+        const capitulosVisualTexto = arrayCapitulosSeleccionados.map(key => diccionarioNombres[key.toLowerCase()] || key.toUpperCase()).join(", ");
 
-    // Parámetros para la plantilla de confirmación de eliminación en EmailJS
-    const params = {
-        tituloCorreo: "Su eliminación de reserva ha sido confirmada ☑️",
-        saludoInicial: `Estimado(a) ${nombreOrganizadorReserva}`,
-        mensajeIntroduccion: `Le confirmamos que su registro de reserva para el evento "${nombreEventoReserva}" ha sido eliminado correctamente.`,
-        claveEventoReserva: claveReservaCreada || "",
-        fechaReserva: fechaReserva || "",
-        horaReserva: horaMilitar || "",
-        capitulo: capitulosVisualTexto || "", // String formateado con todos los capítulos separados por comas
-        duracionEvento: `${duracionHoras} hora(s) ${duracionMinutos} minuto(s)`,
-        planEvento: planEvento || "",
-        observacionesReserva: observacionesReserva || "No se especificaron observaciones.",
-        modalidadReserva: modalidadReserva || "",
-        ubicacionOPlataforma: ubicacionOPlataforma || "",
-        nombrePonente: nombrePonente || "",
-        mensajePublicidad: "", 
-        observacionesPublicidad: "", 
-        fotoPonenteTexto: "", 
-        fotoPonenteURL: "", 
-        mensajeFinal: "Recuerde que todas las claves son personales e intransferibles, no las comparta con nadie. 💙💚",
-        despedida: "Cordialmente, Alessandro Villanueva Cantillo - Administrador y creador SIEA",
-        to_email: destinatario, 
-        subject: asunto
-    };
+        // Parámetros para la plantilla de confirmación de eliminación en EmailJS
+        const params = {
+            tituloCorreo: "Su eliminación de reserva ha sido confirmada ☑️",
+            saludoInicial: `Estimado(a) ${nombreOrganizadorReserva}`,
+            mensajeIntroduccion: `Le confirmamos que su registro de reserva para el evento "${nombreEventoReserva}" ha sido eliminado correctamente.`,
+            claveEventoReserva: claveReservaCreada || "",
+            fechaReserva: fechaReserva || "",
+            horaReserva: horaMilitar || "",
+            capitulo: capitulosVisualTexto || "", // String formateado con todos los capítulos separados por comas
+            duracionEvento: `${duracionHoras} hora(s) ${duracionMinutos} minuto(s)`,
+            planEvento: planEvento || "",
+            observacionesReserva: observacionesReserva || "No se especificaron observaciones.",
+            modalidadReserva: modalidadReserva || "",
+            ubicacionOPlataforma: ubicacionOPlataforma || "",
+            nombrePonente: nombrePonente || "",
+            mensajePublicidad: "", 
+            observacionesPublicidad: "", 
+            fotoPonenteTexto: "", 
+            fotoPonenteURL: "", 
+            mensajeFinal: "Recuerde que todas las claves son personales e intransferibles, no las comparta con nadie. 💙💚",
+            despedida: "Cordialmente, Alessandro Villanueva Cantillo - Administrador y creador SIEA",
+            to_email: destinatario, 
+            subject: asunto
+        };
 
-    // Enviar correo usando EmailJS con la plantilla "registro_reservas" o la asignada
-    emailjs.send("siea_6zoabdr", "registro_reservas", params)
-        .then((response) => {
-            console.log("Correo de confirmación de eliminación de reserva enviado exitosamente", response.status, response.text);
-            alert("Confirmación de eliminación de reserva enviada exitosamente.");
-        })
-        .catch((error) => {
-            console.error("Error al enviar el correo de confirmación de eliminación de reserva:", error);
-            alert(`Error al enviar la confirmación de eliminación de reserva: ${error.text || "Error desconocido"}. Por favor, consulta con el administrador.`);
-        });
-}
-
+        // Enviar correo usando EmailJS con la plantilla "registro_reservas" o la asignada
+        emailjs.send("siea_6zoabdr", "registro_reservas", params)
+            .then((response) => {
+                console.log("Correo de confirmación de eliminación de reserva enviado exitosamente", response.status, response.text);
+                alert("Confirmación de eliminación de reserva enviada exitosamente.");
+            })
+            .catch((error) => {
+                console.error("Error al enviar el correo de confirmación de eliminación de reserva:", error);
+                alert(`Error al enviar la confirmación de eliminación de reserva: ${error.text || "Error desconocido"}. Por favor, consulta con el administrador.`);
+            });
+    }
 
     function calcularIntervalosNuevaFecha(nuevaFecha, nuevaHora, nuevaDuracion) {
       var nuevosIntervalos = [];
@@ -5541,7 +5725,6 @@ function enviarCorreoEliminarEmailJS(claveReservaCreada, nombreOrganizadorReserv
       });
     }
     
-
     function verificarDisponibilidadRegistro() {
         return new Promise((resolve, reject) => {
         var disponibilidadHorarios = Array(28).fill(true); // Inicialmente, todos los intervalos están disponibles
@@ -6895,7 +7078,6 @@ function enviarCorreoEliminarEmailJS(claveReservaCreada, nombreOrganizadorReserv
                 alert(`Error al enviar el correo de cambio de contraseña: ${error.text || "Error desconocido"}. Por favor, consulta al administrador.`); // Agregar alerta de error
             });
     }
-
 
     // Función para convertir números en emojis
     function numeroAEmoji(numero) {
