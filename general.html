@@ -3622,91 +3622,121 @@ function eliminarReserva() {
             imagePosition: 'top-start'
         });
     } else {
-        // Si no hay campos faltantes, proceder con la eliminación de la reserva
+        var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
+        console.log(claveEventoEliminar);
+        
+        // Obtener una referencia al documento que se desea verificar/eliminar
+        var reservaRef = firebase.firestore().collection("reservas").doc(claveEventoEliminar);
+
+        // Alerta de carga previa mientras consulta
         Swal.fire({
-            title: '¿CONFIRMAS QUE DESEAS ELIMINAR LA RESERVA?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'CONFIRMO',
-            cancelButtonText: 'NO',
-            imageUrl: 'https://i.ibb.co/VSh1RT4/AVATAR-SEGUROELIMINAR-removebg-preview.png',
-            imageWidth: 120,
-            imageHeight: 235,
-            imagePosition: 'top-start'
-        }).then((result) => {
-            // Si el usuario hizo clic en el botón "CONFIRMO", proceder a eliminar la reserva
-            if (result.isConfirmed) {
-                var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
-                console.log(claveEventoEliminar);
+            title: 'Consultando reserva...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        reservaRef.get().then((doc) => {
+            if (doc.exists) {
+                // El documento existe, proceder con la extracción de datos
+                var dataReserva = doc.data();
+                var fechaReservaSub = new Date(dataReserva.fechaEvento);
+                var fechaReserva = fechaReservaSub.toISOString().slice(0, 10);
+                var fechaEventoEliminar = fechaEventoEliminarSub.toISOString().slice(0, 10);
+                var horaReserva = dataReserva.horaEvento;
+                var duracionReserva = dataReserva.duracionEvento;
+                var nombreEventoReserva = dataReserva.nombreEvento;
+                var nombreOrganizadorReserva = dataReserva.nombreOrganizador;
+                var correoReserva = dataReserva.emailOrganizador;
+                var planEvento = dataReserva.planEvento;
+                var observacionesReserva = dataReserva.observacionesEvento;
+                var modalidadReserva = dataReserva.modalidadEvento;
+                var ubicacionOPlataforma = dataReserva.ubicacionPlataforma;
+                var nombrePonente = dataReserva.nombrePonente;
+
+                // --- ADAPTACIÓN MULTICAPÍTULO PARA VISUALIZACIÓN ---
+                var capitulosOrganizadoresFirebase = dataReserva.capitulosOrganizadores || (dataReserva.capitulo ? [dataReserva.capitulo] : []);
                 
-                // Obtener una referencia al documento que se desea eliminar
-                var reservaRef = firebase.firestore().collection("reservas").doc(claveEventoEliminar);
+                const diccionarioNombres = {
+                    "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
+                    "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
+                    "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
+                    "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
+                    "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
+                    "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
+                    "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC", "nacional": "ANEIAP NACIONAL"
+                };
+                var capsFormateados = capitulosOrganizadoresFirebase.map(key => diccionarioNombres[key.toLowerCase().trim()] || key.toUpperCase()).join(", ");
 
-                // Verificar si el documento existe antes de intentar eliminarlo
-                reservaRef.get().then((doc) => {
-                    if (doc.exists) {
-                        // El documento existe, proceder con la extracción de datos
-                        var fechaReservaSub = new Date(doc.data().fechaEvento);
-                        var fechaReserva = fechaReservaSub.toISOString().slice(0, 10);
-                        var fechaEventoEliminar = fechaEventoEliminarSub.toISOString().slice(0, 10);
-                        var horaReserva = doc.data().horaEvento;
-                        var duracionReserva = doc.data().duracionEvento;
-                        var nombreEventoReserva = doc.data().nombreEvento;
-                        var nombreOrganizadorReserva = doc.data().nombreOrganizador;
-                        var correoReserva = doc.data().emailOrganizador;
-                        var planEvento = doc.data().planEvento;
-                        var observacionesReserva = doc.data().observacionesEvento;
-                        var modalidadReserva = doc.data().modalidadEvento;
-                        var ubicacionOPlataforma = doc.data().ubicacionPlataforma;
-                        var nombrePonente = doc.data().nombrePonente;
+                // Dividir la hora y los minutos en variables
+                var partesHora = horaEventoEliminar.split(":");
+                var hora = parseInt(partesHora[0], 10);
+                var minutos = parseInt(partesHora[1], 10);
+                
+                // Calcular el número total de minutos después de la medianoche
+                var minutosDespuesDeMedianoche = hora * 60 + minutos;
+                
+                // Verificar validaciones de seguridad antes de abrir confirmación final
+                if (fechaReserva !== fechaEventoEliminar) {
+                    Swal.fire({
+                        title: '¡FECHA INCORRECTA!',
+                        text: 'La fecha del evento debe ser exactamente igual a la que tiene la reserva.',
+                        icon: 'warning',
+                        confirmButtonText: 'Aceptar',
+                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                        imageWidth: 120,
+                        imageHeight: 235,
+                        imagePosition: 'top-start'
+                    });
+                    return;
+                }
+                
+                if (horaReserva !== '' + minutosDespuesDeMedianoche) {
+                    Swal.fire({
+                        title: '¡HORA INCORRECTA!',
+                        text: 'La hora del evento debe ser exactamente igual a la que tiene la reserva.',
+                        icon: 'warning',
+                        confirmButtonText: 'Aceptar',
+                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                        imageWidth: 120,
+                        imageHeight: 235,
+                        imagePosition: 'top-start'
+                    });
+                    return;
+                }
 
-                        // --- NUEVA ADAPTACIÓN MULTICAPÍTULO PARA ELIMINACIÓN ---
-                        // Traemos el array capitulosOrganizadores almacenado en Firestore. 
-                        // Si por alguna razón el documento antiguo no lo tiene, recurrimos al campo clásico como respaldo en un array de respaldo.
-                        var capitulosOrganizadoresFirebase = doc.data().capitulosOrganizadores || (doc.data().capitulo ? [doc.data().capitulo] : []);
+                // Si las llaves de validación coinciden, se muestra el cuadro con el resumen detallado de la reserva detectada
+                Swal.fire({
+                    title: '¿CONFIRMAS QUE DESEAS ELIMINAR LA RESERVA?',
+                    html: `
+                        <div style="text-align: left; background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 8px; font-size: 14px;">
+                            <b>📌 Evento:</b> ${nombreEventoReserva}<br>
+                            <b>📅 Fecha:</b> ${fechaReserva}<br>
+                            <b>🎓 Capítulo(s):</b> ${capsFormateados}<br>
+                            <b>👤 Organizador:</b> ${nombreOrganizadorReserva}
+                        </div>
+                        <p style="margin-top: 12px; font-size: 13px; color: #6c757d;">Esta acción es irreversible y removerá el registro de los calendarios.</p>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'CONFIRMO',
+                    cancelButtonText: 'NO',
+                    imageUrl: 'https://i.ibb.co/VSh1RT4/AVATAR-SEGUROELIMINAR-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Re-confirmar spinner de carga de ejecución física
+                        Swal.fire({
+                            title: 'Eliminando documento...',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
 
-                        // Dividir la hora y los minutos en variables
-                        var partesHora = horaEventoEliminar.split(":");
-                        var hora = parseInt(partesHora[0], 10);
-                        var minutos = parseInt(partesHora[1], 10);
-                        
-                        // Calcular el número total de minutos después de la medianoche
-                        var minutosDespuesDeMedianoche = hora * 60 + minutos;
-                        
-                        // Verificar si la fecha es la apropiada
-                        if (fechaReserva !== fechaEventoEliminar) {
-                            Swal.fire({
-                                title: '¡FECHA INCORRECTA!',
-                                text: 'La fecha del evento debe ser exactamente igual a la que tiene la reserva.',
-                                icon: 'warning',
-                                confirmButtonText: 'Aceptar',
-                                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
-                                imageWidth: 120,
-                                imageHeight: 235,
-                                imagePosition: 'top-start'
-                            });
-                            return;
-                        }
-                        
-                        if (horaReserva !== '' + minutosDespuesDeMedianoche) {
-                            Swal.fire({
-                                title: '¡HORA INCORRECTA!',
-                                text: 'La hora del evento debe ser exactamente igual a la que tiene la reserva.',
-                                icon: 'warning',
-                                confirmButtonText: 'Aceptar',
-                                imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
-                                imageWidth: 120,
-                                imageHeight: 235,
-                                imagePosition: 'top-start'
-                            });
-                            return;
-                        }
-                        
-                        // Eliminar físicamente el documento de Firestore
                         reservaRef.delete().then(() => {
                             console.log("Reserva eliminada con éxito.");
                             
-                            // Pasamos la colección de capítulos recuperada al despachador de correo electrónico
                             enviarCorreoEliminarEmailJS(claveEventoEliminar, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulosOrganizadoresFirebase, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente);
                             
                             // Resetear los campos del formulario
@@ -3718,13 +3748,13 @@ function eliminarReserva() {
                             var content = document.getElementById("acordeon3-content");
                             content.style.display = "none";
                             
-                            // Mostrar mensaje de éxito
+                            // Mostrar mensaje de éxito institucional
                             mostrarMensajeEliminar();
                         }).catch((error) => {
                             console.error("NO SE PUDO ELIMINAR LA RESERVA", error);
                             Swal.fire({
                                 title: '¡ERROR!',
-                                text: 'Ha ocurrido un error al eliminar la reserva. Inténtalo nuevamente más tarde o ponte en contacto con el administrador de la plataforma.',
+                                text: 'Ha ocurrido un error al intentar eliminar la reserva de la base de datos.',
                                 icon: 'error',
                                 confirmButtonText: 'Aceptar',
                                 imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
@@ -3733,32 +3763,32 @@ function eliminarReserva() {
                                 imagePosition: 'top-start'
                             });
                         });
-                    } else {
-                        Swal.fire({
-                            title: 'NO EXISTE ESTA RESERVA',
-                            text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que estás diligenciando la clave correcta.',
-                            icon: 'warning',
-                            confirmButtonText: 'Aceptar',
-                            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
-                            imageWidth: 120,
-                            imageHeight: 235,
-                            imagePosition: 'top-start'
-                        });
                     }
-                }).catch((error) => {
-                    console.error("ERROR AL CONSULTAR LA RESERVA", error);
-                    Swal.fire({
-                        title: '¡ERROR!',
-                        text: 'Ha ocurrido un error al consultar la reserva. Inténtalo nuevamente más tarde o ponte en contacto con el administrador de la plataforma',
-                        icon: 'error',
-                        confirmButtonText: 'Aceptar',
-                        imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
-                        imageWidth: 120,
-                        imageHeight: 235,
-                        imagePosition: 'top-start'
-                    });
+                });
+            } else {
+                Swal.fire({
+                    title: 'NO EXISTE ESTA RESERVA',
+                    text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que estás diligenciando la clave correcta.',
+                    icon: 'warning',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
                 });
             }
+        }).catch((error) => {
+            console.error("ERROR AL CONSULTAR LA RESERVA", error);
+            Swal.fire({
+                title: '¡ERROR!',
+                text: 'Ha ocurrido un error técnico al consultar la reserva. Inténtalo nuevamente más tarde.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+                imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                imageWidth: 120,
+                imageHeight: 235,
+                imagePosition: 'top-start'
+            });
         });
     }
 }
