@@ -1795,7 +1795,8 @@
           <!-- Botón para ocultar o mostrar la tabla de evaluaciones -->
           <button id="toggleEvaluaciones" onclick="toggleEvaluaciones()">Mostrar tabla de evaluaciones</button>
           <button id="toggleEvaluaciones" onclick="GenerarListadoAsistencia()">Generar listado histórico de asistencia</button>
-          <button id="btnEliminarDuplicados" onclick="eliminarRespuestasDuplicadas()" style="background-color: #d90429; color: white; font-weight: bold;">Eliminar respuestas duplicadas</button>
+          <button id="btnEliminarDuplicados" onclick="eliminarRespuestasDuplicadas()" style="background-color: #d90429; color: white; font-weight: bold;">Eliminar duplicados</button>
+          <button id="btnLimpiarEmojis" onclick="limpiarEmojisComentarios()" style="background-color: #ffb703; color: #023047; font-weight: bold;">🧹</button>
           <!-- Mensaje de estado de la tabla -->
           <p id="estadoTablaEvaluaciones" style="text-align: center; display: block;">La tabla de evaluaciones de satisfacción está oculta</p>
           <!-- Tabla con las evaluaciones -->
@@ -2254,6 +2255,116 @@
                 icon: 'error',
                 title: '¡ERROR!',
                 text: 'Ocurrió un fallo de conexión al consultar los datos originales.',
+                confirmButtonText: 'Aceptar'
+            });
+        });
+    }
+
+    function limpiarEmojisComentarios() {
+        var nombreEvento = document.getElementById("nombre-espacio-consultar-evaluaciones").value;
+        var fechaInicial = document.getElementById("fecha-inicial-evaluaciones").value;
+        var fechaFinal = document.getElementById("fecha-final-evaluaciones").value;
+
+        if (!nombreEvento) {
+            Swal.fire({
+                icon: 'warning',
+                title: '¡FALTA SELECCIONAR EL EVENTO!',
+                text: 'Por favor, selecciona un evento del listado antes de proceder a limpiar los comentarios.',
+                confirmButtonText: 'Aceptar'
+            });
+            return;
+        }
+
+        // Alerta de procesamiento
+        Swal.fire({
+            title: 'Buscando y removiendo emojis...',
+            text: 'Estamos saneando el texto de los comentarios en Firebase sin alterar su estructura.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        var reservasRef = firebase.firestore().collection("reservas");
+        var consultaEvaluaciones = reservasRef.where("nombreEvento", "==", nombreEvento)
+            .where("fechaEvento", ">=", fechaInicial)
+            .where("fechaEvento", "<=", fechaFinal)
+            .where("capitulosOrganizadores", "array-contains", capituloUsuario);
+
+        consultaEvaluaciones.get().then(function(querySnapshot) {
+            if (querySnapshot.empty) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'SIN REGISTROS',
+                    text: 'No se encontraron documentos vigentes para este espacio.',
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            let promesasActualizacion = [];
+            let totalModificados = 0;
+
+            querySnapshot.forEach(function(doc) {
+                var data = doc.data();
+                var comentariosOriginales = data.comentarios || "";
+
+                if (comentariosOriginales === "") return;
+
+                // --- EXPRESIÓN REGULAR AVANZADA PARA REMOVER EMOJIS ---
+                // Esta expresión regular mapea los bloques Unicode más comunes de emojis y símbolos especiales sin tocar texto, tildes ni signos.
+                const regexEmojis = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1F004}\u{1F0CF}\u{1F170}-\u{1F251}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2b50}\u{2b55}]/gu;
+
+                // Reemplazar todos los emojis encontrados por un string vacío
+                var comentariosLimpios = comentariosOriginales.replace(regexEmojis, "");
+
+                // Si el texto limpio es diferente al original, significa que eliminó emojis dañinos
+                if (comentariosOriginales !== comentariosLimpios) {
+                    totalModificados++;
+                    
+                    var p = reservasRef.doc(doc.id).update({
+                        comentarios: comentariosLimpios
+                    });
+                    promesasActualizacion.push(p);
+                }
+            });
+
+            // Verificar si efectivamente se limpiaron caracteres especiales
+            if (totalModificados === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'TEXTO SANO ✨',
+                    text: 'No se encontraron emojis o caracteres especiales en los comentarios de este espacio.',
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+
+            // Esperar a que impacte Firestore
+            Promise.all(promesasActualizacion).then(function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡COMENTARIOS SANEADOS! 🧹',
+                    text: 'Se han removido de forma exitosa todos los emojis del string. Los signos de puntuación, letras y números permanecen intactos.',
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    // Refrescar automáticamente la tabla de la interfaz con los textos limpios
+                    consultarEvaluaciones();
+                });
+            }).catch(function(err) {
+                console.error("Error al guardar los comentarios saneados:", err);
+                Swal.fire({
+                    icon: 'error',
+                    title: '¡ERROR!',
+                    text: 'Ocurrió un error al intentar escribir los textos limpios en la base de datos.',
+                    confirmButtonText: 'Aceptar'
+                });
+            });
+
+        }).catch(function(error) {
+            console.error("Error consultando evaluaciones para limpieza de texto:", error);
+            Swal.fire({
+                icon: 'error',
+                title: '¡ERROR!',
+                text: 'Ocurrió un fallo de conexión al intentar mapear los comentarios.',
                 confirmButtonText: 'Aceptar'
             });
         });
