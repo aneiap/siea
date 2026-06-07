@@ -7888,218 +7888,257 @@ function eliminarReserva() {
     }
 
     function editarInformacionInterna() {
-        // Obtener el valor seleccionado del espacio
-        console.log("El espacio seleccionado es: " + document.getElementById("nombre-espacio-actualizar").value)
-        const espacioSeleccionado = document.getElementById("nombre-espacio-actualizar").value;
-        if (!espacioSeleccionado) {
-            Swal.fire({
-                title: '¡Espacio no seleccionado!',
-                text: 'Por favor selecciona un espacio antes de continuar.',
-                icon: 'warning',
-                confirmButtonText: 'Aceptar'
-            });
-            return;
-        }
-
-        // Obtener información de Firebase
-        const reservasRef = firebase.firestore().collection("reservas");
-        const fechaInicial = fechaInicialInput.value;
-        const fechaFinal = fechaFinalInput.value;
-
-        console.log("La fecha inicial es: " + fechaInicial);
-        console.log("La fecha final es: " + fechaFinal);
-        console.log("El capítulo del usuario es: " + capituloUsuario);
-
-        const consulta = reservasRef
-            .where("capitulosOrganizadores", "array-contains", capituloUsuario)
-            .where("fechaEvento", ">=", fechaInicial)
-            .where("fechaEvento", "<=", fechaFinal)
-            .where("nombreEvento", "==", espacioSeleccionado);
-
-        // Ejecutar consulta
-        consulta.get().then((querySnapshot) => {
-            if (!querySnapshot.empty) {
-                const eventoDoc = querySnapshot.docs[0]; // Selecciona el primer documento
-                const eventoData = eventoDoc.data();
-                const capitulosExistentes = eventoData.capitulosOrganizadores || [];
-                const capitulosRestantes = 5 - capitulosExistentes.length;
-
+            // Obtener el valor seleccionado del espacio
+            console.log("El espacio seleccionado es: " + document.getElementById("nombre-espacio-actualizar").value)
+            const espacioSeleccionado = document.getElementById("nombre-espacio-actualizar").value;
+            if (!espacioSeleccionado) {
                 Swal.fire({
-                    title: 'Edición de Información',
-                    text: '¿Deseas editar información del ponente o añadir un capítulo organizador?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Añadir capítulo',
-                    cancelButtonText: 'Cancelar',
-                    showDenyButton: true,
-                    denyButtonText: 'Editar información del ponente'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Comprobar si ya se ha alcanzado el máximo de capítulos
-                        if (capitulosRestantes <= 0) {
-                            Swal.fire({
-                                title: 'Máximo de capítulos alcanzado',
-                                text: 'Este espacio ya tiene 5 capítulos organizadores, que es el límite, por lo que no podrás añadirle alguno adicional.',
-                                icon: 'info',
-                                confirmButtonText: 'Aceptar'
-                            });
-                            return;
-                        }
-
-                        // Opciones de capítulos
-                        const opcionesCapitulos = [
-                            "uniguajira", "unimagdalena", "usasm", "unicaribe", "uniatlantico", "uninorte", "unisimon", 
-                            "cuc", "librequilla", "utb", "upbmonteria", "unicordoba", 
-                            "ufps", "unalmed", "udea", "upbmed", 
-                            "utp", "unalma", "udistrital", "unalbog", "univalle", 
-                            "icesi", "uao", "usc"
-                        ];
-                        
-                        // Crear la estructura HTML para los desplegables y textos adicionales
-                        let seleccionCapitulosHTML = '';
-                        for (let i = 0; i < capitulosRestantes; i++) {
-                            const numeroCapitulo = capitulosExistentes.length + i + 1;  // Calcula el número correcto del capítulo
-                            const etiquetaCapitulo = numeroCapitulo === 2 ? "Segundo capítulo" :
-                                                numeroCapitulo === 3 ? "Tercer capítulo" :
-                                                numeroCapitulo === 4 ? "Cuarto capítulo" :
-                                                "Quinto capítulo"; // Nuevo
-                            seleccionCapitulosHTML += `
-                                <label for="capituloOpcion${i + 1}"><b>${etiquetaCapitulo}</b></label>
-                                <select id="capituloOpcion${i + 1}">
-                                    <option value="" disabled selected>Selecciona un capítulo</option>
-                                    ${opcionesCapitulos.map(c => `<option value="${c}">${c}</option>`).join('')}
-                                </select><br>
-                            `;
-                        }
-
-                        // Añadir el texto con los capítulos actuales en mayúsculas
-                        const capitulosActualesTexto = capitulosExistentes.map(c => c.toUpperCase()).join(", ");
-                        seleccionCapitulosHTML += `<p>Estos son los capítulos que actualmente aparecen como organizadores del espacio: ${capitulosActualesTexto}</p>`;
-
-                        // Mostrar el Swal con la estructura personalizada
-                        Swal.fire({
-                            title: 'Selecciona capítulos adicionales',
-                            html: seleccionCapitulosHTML,
-                            showCancelButton: true,
-                            confirmButtonText: 'Añadir capítulo',
-                            cancelButtonText: 'Cancelar',
-                            preConfirm: () => {
-                                // Obtener las selecciones de capítulos
-                                const nuevosCapitulos = [];
-                                for (let i = 0; i < capitulosRestantes; i++) {
-                                    const capitulo = document.getElementById(`capituloOpcion${i + 1}`).value;
-                                    if (capitulo && !capitulosExistentes.includes(capitulo)) {
-                                        nuevosCapitulos.push(capitulo);
-                                    } else if (capitulo && capitulosExistentes.includes(capitulo)) {
-                                        Swal.showValidationMessage(`El capítulo ${capitulo} ya es un organizador.`);
-                                        return false;
-                                    }
-                                }
-                                return nuevosCapitulos;
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed && result.value.length > 0) {
-                                // Actualizar el campo "capitulosOrganizadores" en Firebase
-                                const nuevosCapitulos = result.value;
-                                const actualizacion = {
-                                    capitulosOrganizadores: firebase.firestore.FieldValue.arrayUnion(...nuevosCapitulos)
-                                };
-
-                                eventoDoc.ref.update(actualizacion).then(() => {
-                                    mostrarMensajeActualizarEspacio();
-                                }).catch(() => {
-                                    mostrarMensajeFallaTecnica();
-                                });
-                            } else if (result.isConfirmed) {
-                                Swal.fire({
-                                    title: 'No se seleccionó ningún capítulo',
-                                    text: 'No se realizó ninguna actualización porque no seleccionaste ningún capítulo nuevo.',
-                                    icon: 'info',
-                                    confirmButtonText: 'Aceptar'
-                                });
-                            }
-                        });
-                    } else if (result.isDenied) {
-                        // Información actual del ponente
-                        const nombreActual = eventoData.nombrePonente || '';
-                        const emailActual = eventoData.emailPonente || '';
-                        const telefonoActual = eventoData.telefonoPonente || '';
-
-                        // Crear el formulario con los campos del ponente en Swal
-                        Swal.fire({
-                            title: 'Actualizar información del ponente',
-                            html: `
-                                <label for="nombrePonente">Nombre del ponente:</label>
-                                <input type="text" id="nombrePonente" class="swal2-input" placeholder="Nombre del ponente" value="${nombreActual}">
-
-                                <label for="emailPonente">Email del ponente:</label>
-                                <input type="text" id="emailPonente" class="swal2-input" placeholder="Email del ponente" value="${emailActual}">
-
-                                <label for="telefonoPonente">Teléfono del ponente:</label>
-                                <input type="text" id="telefonoPonente" class="swal2-input" placeholder="Teléfono del ponente" value="${telefonoActual}">
-                            `,
-                            showCancelButton: true,
-                            confirmButtonText: 'Actualizar',
-                            cancelButtonText: 'Cancelar',
-                            preConfirm: () => {
-                                // Obtener los valores de los campos
-                                const nombrePonente = document.getElementById("nombrePonente").value.trim();
-                                const emailPonente = document.getElementById("emailPonente").value.trim();
-                                const telefonoPonente = document.getElementById("telefonoPonente").value.trim();
-
-                                // Validaciones
-                                if (!nombrePonente) {
-                                    Swal.showValidationMessage("El nombre del ponente es obligatorio.");
-                                    return false;
-                                }
-                                if (!emailPonente && !telefonoPonente) {
-                                    Swal.showValidationMessage("Debes diligenciar al menos el email o el teléfono del ponente.");
-                                    return false;
-                                }
-                                if (telefonoPonente && (!/^[3]\d{9}$/.test(telefonoPonente))) {
-                                    Swal.showValidationMessage("Debes diligenciar un número de teléfono válido.");
-                                    return false;
-                                }
-
-                                // Si pasa las validaciones, devolver los datos actualizados
-                                return {
-                                    nombrePonente,
-                                    emailPonente,
-                                    telefonoPonente
-                                };
-                            }
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                const { nombrePonente, emailPonente, telefonoPonente } = result.value;
-
-                                // Actualizar los campos en Firebase
-                                eventoDoc.ref.update({
-                                    nombrePonente,
-                                    emailPonente,
-                                    telefonoPonente
-                                }).then(() => {
-                                    mostrarMensajeActualizarEspacio();
-                                }).catch(() => {
-                                    mostrarMensajeFallaTecnica();
-                                });
-                            }
-                        });
-                    }
-                });
-            } else {
-                Swal.fire({
-                    title: 'Espacio no encontrado',
-                    text: 'No se encontró información para el espacio seleccionado en el rango de fechas especificado.',
+                    title: '¡Espacio no seleccionado!',
+                    text: 'Por favor selecciona un espacio antes de continuar.',
                     icon: 'warning',
                     confirmButtonText: 'Aceptar'
                 });
+                return;
             }
-        }).catch((error) => {
-            console.error("Error al buscar el evento:", error);
-            mostrarMensajeFallaTecnica();
-        });
-    }
 
+            // Obtener información de Firebase
+            const reservasRef = firebase.firestore().collection("reservas");
+            const fechaInicial = fechaInicialInput.value;
+            const fechaFinal = fechaFinalInput.value;
+
+            console.log("La fecha inicial es: " + fechaInicial);
+            console.log("La fecha final es: " + fechaFinal);
+            console.log("El capítulo del usuario es: " + capituloUsuario);
+
+            const consulta = reservasRef
+                .where("capitulosOrganizadores", "array-contains", capituloUsuario)
+                .where("fechaEvento", ">=", fechaInicial)
+                .where("fechaEvento", "<=", fechaFinal)
+                .where("nombreEvento", "==", espacioSeleccionado);
+
+            // Ejecutar consulta
+            consulta.get().then((querySnapshot) => {
+                if (!querySnapshot.empty) {
+                    const eventoDoc = querySnapshot.docs[0]; // Selecciona el primer documento
+                    const eventoData = eventoDoc.data();
+                    const capitulosExistentes = eventoData.capitulosOrganizadores || [];
+                    const capitulosRestantes = 5 - capitulosExistentes.length;
+
+                    // Encapsulamos el menú principal en una función para poder volver a él si le dan a "Cancelar"
+                    const mostrarMenuPrincipal = () => {
+                        Swal.fire({
+                            title: 'Edición de Información',
+                            text: 'Elige la información que deseas editar:',
+                            icon: 'question',
+                            showCloseButton: true, // Agrega la X por si desean cerrar todo sin elegir nada
+                            showCancelButton: true,
+                            showDenyButton: true,
+                            confirmButtonText: 'Añadir capítulo',
+                            denyButtonText: 'Editar ponente',
+                            cancelButtonText: 'Editar plan espacio'
+                        }).then((result) => {
+                            
+                            if (result.isConfirmed) {
+                                // ------------------------------------------
+                                // 1. AÑADIR CAPÍTULO ORGANIZADOR
+                                // ------------------------------------------
+                                if (capitulosRestantes <= 0) {
+                                    Swal.fire({
+                                        title: 'Máximo de capítulos alcanzado',
+                                        text: 'Este espacio ya tiene 5 capítulos organizadores, que es el límite, por lo que no podrás añadirle alguno adicional.',
+                                        icon: 'info',
+                                        confirmButtonText: 'Aceptar'
+                                    }).then(() => mostrarMenuPrincipal());
+                                    return;
+                                }
+
+                                const opcionesCapitulos = [
+                                    "uniguajira", "unimagdalena", "usasm", "unicaribe", "uniatlantico", "uninorte", "unisimon", 
+                                    "cuc", "librequilla", "utb", "upbmonteria", "unicordoba", 
+                                    "ufps", "unalmed", "udea", "upbmed", 
+                                    "utp", "unalma", "udistrital", "unalbog", "univalle", 
+                                    "icesi", "uao", "usc"
+                                ];
+                                
+                                let seleccionCapitulosHTML = '';
+                                for (let i = 0; i < capitulosRestantes; i++) {
+                                    const numeroCapitulo = capitulosExistentes.length + i + 1;
+                                    const etiquetaCapitulo = numeroCapitulo === 2 ? "Segundo capítulo" :
+                                                            numeroCapitulo === 3 ? "Tercer capítulo" :
+                                                            numeroCapitulo === 4 ? "Cuarto capítulo" :
+                                                            "Quinto capítulo";
+                                    seleccionCapitulosHTML += `
+                                        <label for="capituloOpcion${i + 1}"><b>${etiquetaCapitulo}</b></label>
+                                        <select id="capituloOpcion${i + 1}">
+                                            <option value="" disabled selected>Selecciona un capítulo</option>
+                                            ${opcionesCapitulos.map(c => `<option value="${c}">${c}</option>`).join('')}
+                                        </select><br>
+                                    `;
+                                }
+
+                                const capitulosActualesTexto = capitulosExistentes.map(c => c.toUpperCase()).join(", ");
+                                seleccionCapitulosHTML += `<p>Estos son los capítulos que actualmente aparecen como organizadores del espacio: ${capitulosActualesTexto}</p>`;
+
+                                Swal.fire({
+                                    title: 'Selecciona capítulos adicionales',
+                                    html: seleccionCapitulosHTML,
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Añadir capítulo',
+                                    cancelButtonText: 'Cancelar',
+                                    preConfirm: () => {
+                                        const nuevosCapitulos = [];
+                                        for (let i = 0; i < capitulosRestantes; i++) {
+                                            const capitulo = document.getElementById(`capituloOpcion${i + 1}`).value;
+                                            if (capitulo && !capitulosExistentes.includes(capitulo)) {
+                                                nuevosCapitulos.push(capitulo);
+                                            } else if (capitulo && capitulosExistentes.includes(capitulo)) {
+                                                Swal.showValidationMessage(`El capítulo ${capitulo} ya es un organizador.`);
+                                                return false;
+                                            }
+                                        }
+                                        return nuevosCapitulos;
+                                    }
+                                }).then((resultCap) => {
+                                    if (resultCap.isConfirmed && resultCap.value.length > 0) {
+                                        const actualizacion = {
+                                            capitulosOrganizadores: firebase.firestore.FieldValue.arrayUnion(...resultCap.value)
+                                        };
+                                        eventoDoc.ref.update(actualizacion).then(() => {
+                                            mostrarMensajeActualizarEspacio();
+                                        }).catch(() => {
+                                            mostrarMensajeFallaTecnica();
+                                        });
+                                    } else if (resultCap.dismiss === Swal.DismissReason.cancel) {
+                                        mostrarMenuPrincipal(); // Volver a las opciones previas
+                                    } else if (resultCap.isConfirmed) {
+                                        Swal.fire({
+                                            title: 'No se seleccionó ningún capítulo',
+                                            text: 'No se realizó ninguna actualización porque no seleccionaste ningún capítulo nuevo.',
+                                            icon: 'info',
+                                            confirmButtonText: 'Aceptar'
+                                        }).then(() => mostrarMenuPrincipal());
+                                    }
+                                });
+
+                            } else if (result.isDenied) {
+                                // ------------------------------------------
+                                // 2. EDITAR INFORMACIÓN DEL PONENTE
+                                // ------------------------------------------
+                                const nombreActual = eventoData.nombrePonente || '';
+                                const emailActual = eventoData.emailPonente || '';
+                                const telefonoActual = eventoData.telefonoPonente || '';
+
+                                Swal.fire({
+                                    title: 'Actualizar información del ponente',
+                                    html: `
+                                        <label for="nombrePonente">Nombre del ponente:</label>
+                                        <input type="text" id="nombrePonente" class="swal2-input" placeholder="Nombre del ponente" value="${nombreActual}">
+
+                                        <label for="emailPonente">Email del ponente:</label>
+                                        <input type="text" id="emailPonente" class="swal2-input" placeholder="Email del ponente" value="${emailActual}">
+
+                                        <label for="telefonoPonente">Teléfono del ponente:</label>
+                                        <input type="text" id="telefonoPonente" class="swal2-input" placeholder="Teléfono del ponente" value="${telefonoActual}">
+                                    `,
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Actualizar',
+                                    cancelButtonText: 'Cancelar',
+                                    preConfirm: () => {
+                                        const nombrePonente = document.getElementById("nombrePonente").value.trim();
+                                        const emailPonente = document.getElementById("emailPonente").value.trim();
+                                        const telefonoPonente = document.getElementById("telefonoPonente").value.trim();
+
+                                        if (!nombrePonente) {
+                                            Swal.showValidationMessage("El nombre del ponente es obligatorio.");
+                                            return false;
+                                        }
+                                        if (!emailPonente && !telefonoPonente) {
+                                            Swal.showValidationMessage("Debes diligenciar al menos el email o el teléfono del ponente.");
+                                            return false;
+                                        }
+                                        if (telefonoPonente && (!/^[3]\d{9}$/.test(telefonoPonente))) {
+                                            Swal.showValidationMessage("Debes diligenciar un número de teléfono válido.");
+                                            return false;
+                                        }
+
+                                        return { nombrePonente, emailPonente, telefonoPonente };
+                                    }
+                                }).then((resultPonente) => {
+                                    if (resultPonente.isConfirmed) {
+                                        eventoDoc.ref.update({
+                                            nombrePonente: resultPonente.value.nombrePonente,
+                                            emailPonente: resultPonente.value.emailPonente,
+                                            telefonoPonente: resultPonente.value.telefonoPonente
+                                        }).then(() => {
+                                            mostrarMensajeActualizarEspacio();
+                                        }).catch(() => {
+                                            mostrarMensajeFallaTecnica();
+                                        });
+                                    } else if (resultPonente.dismiss === Swal.DismissReason.cancel) {
+                                        mostrarMenuPrincipal(); // Volver a las opciones previas
+                                    }
+                                });
+
+                            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                                // ------------------------------------------
+                                // 3. EDITAR PLAN ESPACIO
+                                // ------------------------------------------
+                                const planActual = eventoData.planEvento || '';
+
+                                Swal.fire({
+                                    title: 'Editar plan de espacio',
+                                    input: 'textarea',
+                                    inputValue: planActual,
+                                    inputPlaceholder: 'Escribe aquí el nuevo plan del evento...',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Enviar cambio',
+                                    cancelButtonText: 'Cancelar',
+                                    inputAttributes: {
+                                        'aria-label': 'Escribe aquí el plan del evento',
+                                        'style': 'height: 150px;'
+                                    },
+                                    preConfirm: (nuevoPlan) => {
+                                        if (!nuevoPlan.trim()) {
+                                            Swal.showValidationMessage("El plan del evento no puede estar vacío.");
+                                            return false;
+                                        }
+                                        return nuevoPlan.trim();
+                                    }
+                                }).then((resultPlan) => {
+                                    if (resultPlan.isConfirmed) {
+                                        eventoDoc.ref.update({
+                                            planEvento: resultPlan.value
+                                        }).then(() => {
+                                            mostrarMensajeActualizarEspacio();
+                                        }).catch(() => {
+                                            mostrarMensajeFallaTecnica();
+                                        });
+                                    } else if (resultPlan.dismiss === Swal.DismissReason.cancel) {
+                                        // Volver a las 3 opciones previas al cancelar
+                                        mostrarMenuPrincipal();
+                                    }
+                                });
+                            }
+                        });
+                    };
+
+                    // Desplegamos el menú por primera vez
+                    mostrarMenuPrincipal();
+
+                } else {
+                    Swal.fire({
+                        title: 'Espacio no encontrado',
+                        text: 'No se encontró información para el espacio seleccionado en el rango de fechas especificado.',
+                        icon: 'warning',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+            }).catch((error) => {
+                console.error("Error al buscar el evento:", error);
+                mostrarMensajeFallaTecnica();
+            });
+        }
+        
     // Función para alternar la visibilidad de la tabla resumen y cambiar el texto del botón
     function toggleTablaResumen() {
       var tabla = document.getElementById("tabla-resumen");
