@@ -4513,7 +4513,7 @@ function eliminarReserva() {
       var fechaDomingoString = convertirFechaTipoFirebaseYDate(fechaDomingo);
 
       // Verificar correo y ejecutar función correspondiente
-      if (["academico@aneiap.co", "jdn@aneiap.co", "mercadeo@aneiap.co, informes@aneiap.co"].includes(correoUsuario)) {
+      if (["academico@aneiap.co", "jdn@aneiap.co", "mercadeo@aneiap.co, formacion_integral@aneiap.co"].includes(correoUsuario)) {
         consultarEventosGeneral(fechaLunesString, cuerpoTabla);
         consultarEventosGeneral(fechaMartesString, cuerpoTabla);
         consultarEventosGeneral(fechaMiercolesString, cuerpoTabla);
@@ -4775,7 +4775,7 @@ function eliminarReserva() {
             icesi: "academico_icesi@aneiap.co, interventoria_icesi@aneiap.co",
             uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
             usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-            nacional: "academico@aneiap.co, interventoria@aneiap.co, informes@aneiap.co"
+            nacional: "academico@aneiap.co, interventoria@aneiap.co, formacion_integral@aneiap.co"
         };
 
         let listaDestinatarios = [];
@@ -5503,7 +5503,7 @@ function eliminarReserva() {
             icesi: "academico_icesi@aneiap.co, interventoria_icesi@aneiap.co",
             uao: "academico_uao@aneiap.co, interventoria_uao@aneiap.co",
             usc: "academico_usc@aneiap.co, interventoria_usc@aneiap.co",
-            nacional: "academico@aneiap.co, interventoria@aneiap.co, informes@aneiap.co"
+            nacional: "academico@aneiap.co, interventoria@aneiap.co, formacion_integral@aneiap.co"
         };
 
         let listaDestinatarios = [];
@@ -6381,7 +6381,7 @@ function eliminarReserva() {
         const asunto = `GENERACIÓN TICKET - TIPO ${tipoTicket}`;
 
         // Crear la constante para los correos destinatarios
-        const correosDestinatarios = `${correo}, siea@aneiap.co, academico@aneiap.co, informes@aneiap.co`;
+        const correosDestinatarios = `${correo}, siea@aneiap.co, academico@aneiap.co, formacion_integral@aneiap.co`;
         console.log("correosDestinatarios: " + correosDestinatarios)
 
         // Parámetros para la plantilla de EmailJS
@@ -6449,7 +6449,7 @@ function eliminarReserva() {
     console.log("Función EjecutarAdmin iniciada.");
 
     // Verifica si el usuario es administrador mediante correoUsuario
-    if (correoUsuario !== "siea@aneiap.co" && correoUsuario !== "academico@aneiap.co" && correoUsuario !== "informes@aneiap.co") {
+    if (correoUsuario !== "siea@aneiap.co" && correoUsuario !== "academico@aneiap.co" && correoUsuario !== "formacion_integral@aneiap.co") {
         console.log("Usuario no autorizado. Mostrando mensaje de advertencia.");
         Swal.fire({
         title: "¿LA CURIOSIDAD MATÓ AL GATO?",
@@ -7004,7 +7004,7 @@ function eliminarReserva() {
             correoUsuario = correo;
             // Contraseña correcta, asignar el valor del capítulo dependiendo del correo.
             // Verificar el valor del correo para determinar el capítulo del usuario
-            if (correo === "academico@aneiap.co" || correo === "informes@aneiap.co") {
+            if (correo === "academico@aneiap.co" || correo === "formacion_integral@aneiap.co") {
               // Mostrar un desplegable con la lista de todos los capítulos
               Swal.fire({
                 title: 'Selecciona el capítulo sobre el cual deseas consultar información en caso de que vayas a hacerlo:',
@@ -7059,7 +7059,7 @@ function eliminarReserva() {
                   telefonoCuenta = storedTelefonoCuenta;
                 }
               });
-            } else if (correo.startsWith("academico_") || correo === "informes@aneiap.co") {
+            } else if (correo.startsWith("academico_") || correo === "formacion_integral@aneiap.co") {
               if (correo.startsWith("academico_")) {
                 // Si el correo empieza por "academico_", extraer el nombre del capítulo y asignarlo a capituloUsuario
                 var inicio = "academico_";
