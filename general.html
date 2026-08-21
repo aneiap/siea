@@ -3736,211 +3736,211 @@
 
 
     // Esta función elimina cada reserva que el usuario desee eliminar, también 
-function eliminarReserva() {
-    // Obtener los valores de los campos a verificar
-    var fechaEventoEliminarsub = document.getElementById("fecha-evento-eliminar").value;
-    var horaEventoEliminar = document.getElementById("hora-evento-eliminar").value;
-    var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
-
-    // Crear una lista para almacenar los nombres de los campos faltantes
-    var camposFaltantes = [];
-
-    // Verificar si cada campo está vacío y agregar su nombre a la lista si es el caso
-    if (fechaEventoEliminarsub.trim() === "") {
-        camposFaltantes.push("Fecha del evento. ");
-    }
-    if (horaEventoEliminar.trim() === "") {
-        camposFaltantes.push("Hora del evento. ");
-    }
-    if (claveEventoEliminar.trim() === "") {
-        camposFaltantes.push("Clave del evento.");
-    }
-    var fechaEventoEliminarSub = new Date(document.getElementById("fecha-evento-eliminar").value);
-    
-    // Si hay campos faltantes, mostrar mensaje de error personalizado
-    if (camposFaltantes.length > 0) {
-        var mensajeError = "Faltan campos por diligenciar:\n\n" + camposFaltantes.join("\n");
-        Swal.fire({
-            title: '¡NO HAS DILIGENCIADO TODOS LOS CAMPOS!',
-            text: mensajeError,
-            icon: 'warning',
-            confirmButtonText: 'Aceptar',
-            imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png',
-            imageWidth: 120,
-            imageHeight: 235,
-            imagePosition: 'top-start'
-        });
-    } else {
+    function eliminarReserva() {
+        // Obtener los valores de los campos a verificar
+        var fechaEventoEliminarsub = document.getElementById("fecha-evento-eliminar").value;
+        var horaEventoEliminar = document.getElementById("hora-evento-eliminar").value;
         var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
-        console.log(claveEventoEliminar);
+
+        // Crear una lista para almacenar los nombres de los campos faltantes
+        var camposFaltantes = [];
+
+        // Verificar si cada campo está vacío y agregar su nombre a la lista si es el caso
+        if (fechaEventoEliminarsub.trim() === "") {
+            camposFaltantes.push("Fecha del evento. ");
+        }
+        if (horaEventoEliminar.trim() === "") {
+            camposFaltantes.push("Hora del evento. ");
+        }
+        if (claveEventoEliminar.trim() === "") {
+            camposFaltantes.push("Clave del evento.");
+        }
+        var fechaEventoEliminarSub = new Date(document.getElementById("fecha-evento-eliminar").value);
         
-        // Obtener una referencia al documento que se desea verificar/eliminar
-        var reservaRef = firebase.firestore().collection("reservas").doc(claveEventoEliminar);
-
-        // Alerta de carga previa mientras consulta
-        Swal.fire({
-            title: 'Consultando reserva...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
-
-        reservaRef.get().then((doc) => {
-            if (doc.exists) {
-                // El documento existe, proceder con la extracción de datos
-                var dataReserva = doc.data();
-                var fechaReservaSub = new Date(dataReserva.fechaEvento);
-                var fechaReserva = fechaReservaSub.toISOString().slice(0, 10);
-                var fechaEventoEliminar = fechaEventoEliminarSub.toISOString().slice(0, 10);
-                var horaReserva = dataReserva.horaEvento;
-                var duracionReserva = dataReserva.duracionEvento;
-                var nombreEventoReserva = dataReserva.nombreEvento;
-                var nombreOrganizadorReserva = dataReserva.nombreOrganizador;
-                var correoReserva = dataReserva.emailOrganizador;
-                var planEvento = dataReserva.planEvento;
-                var observacionesReserva = dataReserva.observacionesEvento;
-                var modalidadReserva = dataReserva.modalidadEvento;
-                var ubicacionOPlataforma = dataReserva.ubicacionPlataforma;
-                var nombrePonente = dataReserva.nombrePonente;
-
-                // --- ADAPTACIÓN MULTICAPÍTULO PARA VISUALIZACIÓN ---
-                var capitulosOrganizadoresFirebase = dataReserva.capitulosOrganizadores || (dataReserva.capitulo ? [dataReserva.capitulo] : []);
-                
-                const diccionarioNombres = {
-                    "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
-                    "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
-                    "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
-                    "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
-                    "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
-                    "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
-                    "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC", "nacional": "ANEIAP NACIONAL"
-                };
-                var capsFormateados = capitulosOrganizadoresFirebase.map(key => diccionarioNombres[key.toLowerCase().trim()] || key.toUpperCase()).join(", ");
-
-                // Dividir la hora y los minutos en variables
-                var partesHora = horaEventoEliminar.split(":");
-                var hora = parseInt(partesHora[0], 10);
-                var minutos = parseInt(partesHora[1], 10);
-                
-                // Calcular el número total de minutos después de la medianoche
-                var minutosDespuesDeMedianoche = hora * 60 + minutos;
-                
-                // Verificar validaciones de seguridad antes de abrir confirmación final
-                if (fechaReserva !== fechaEventoEliminar) {
-                    Swal.fire({
-                        title: '¡FECHA INCORRECTA!',
-                        text: 'La fecha del evento debe ser exactamente igual a la que tiene la reserva.',
-                        icon: 'warning',
-                        confirmButtonText: 'Aceptar',
-                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
-                        imageWidth: 120,
-                        imageHeight: 235,
-                        imagePosition: 'top-start'
-                    });
-                    return;
-                }
-                
-                if (horaReserva !== '' + minutosDespuesDeMedianoche) {
-                    Swal.fire({
-                        title: '¡HORA INCORRECTA!',
-                        text: 'La hora del evento debe ser exactamente igual a la que tiene la reserva.',
-                        icon: 'warning',
-                        confirmButtonText: 'Aceptar',
-                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
-                        imageWidth: 120,
-                        imageHeight: 235,
-                        imagePosition: 'top-start'
-                    });
-                    return;
-                }
-
-                // Si las llaves de validación coinciden, se muestra el cuadro con el resumen detallado de la reserva detectada
-                Swal.fire({
-                    title: '¿CONFIRMAS QUE DESEAS ELIMINAR LA RESERVA?',
-                    html: `
-                        <div style="text-align: left; background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 8px; font-size: 14px;">
-                            <b>📌 Evento:</b> ${nombreEventoReserva}<br>
-                            <b>📅 Fecha:</b> ${fechaReserva}<br>
-                            <b>🎓 Capítulo(s):</b> ${capsFormateados}<br>
-                            <b>👤 Organizador:</b> ${nombreOrganizadorReserva}
-                        </div>
-                        <p style="margin-top: 12px; font-size: 13px; color: #6c757d;">Esta acción es irreversible y removerá el registro de los calendarios.</p>
-                    `,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'CONFIRMO',
-                    cancelButtonText: 'NO',
-                    imageUrl: 'https://i.ibb.co/VSh1RT4/AVATAR-SEGUROELIMINAR-removebg-preview.png',
-                    imageWidth: 120,
-                    imageHeight: 235,
-                    imagePosition: 'top-start',
-                    allowOutsideClick: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Re-confirmar spinner de carga de ejecución física
-                        Swal.fire({
-                            title: 'Eliminando documento...',
-                            allowOutsideClick: false,
-                            didOpen: () => { Swal.showLoading(); }
-                        });
-
-                        reservaRef.delete().then(() => {
-                            console.log("Reserva eliminada con éxito.");
-                            
-                            enviarCorreoEliminarEmailJS(claveEventoEliminar, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulosOrganizadoresFirebase, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente);
-                            
-                            // Resetear los campos del formulario
-                            document.getElementById("fecha-evento-eliminar").value = "";
-                            document.getElementById("hora-evento-eliminar").value = "";
-                            document.getElementById("clave-evento-eliminar").value = "";
-                            
-                            // Ocultar el acordeón 3
-                            var content = document.getElementById("acordeon3-content");
-                            content.style.display = "none";
-                            
-                            // Mostrar mensaje de éxito institucional
-                            mostrarMensajeEliminar();
-                        }).catch((error) => {
-                            console.error("NO SE PUDO ELIMINAR LA RESERVA", error);
-                            Swal.fire({
-                                title: '¡ERROR!',
-                                text: 'Ha ocurrido un error al intentar eliminar la reserva de la base de datos.',
-                                icon: 'error',
-                                confirmButtonText: 'Aceptar',
-                                imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
-                                imageWidth: 120,
-                                imageHeight: 235,
-                                imagePosition: 'top-start'
-                            });
-                        });
-                    }
-                });
-            } else {
-                Swal.fire({
-                    title: 'NO EXISTE ESTA RESERVA',
-                    text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que estás diligenciando la clave correcta.',
-                    icon: 'warning',
-                    confirmButtonText: 'Aceptar',
-                    imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
-                    imageWidth: 120,
-                    imageHeight: 235,
-                    imagePosition: 'top-start'
-                });
-            }
-        }).catch((error) => {
-            console.error("ERROR AL CONSULTAR LA RESERVA", error);
+        // Si hay campos faltantes, mostrar mensaje de error personalizado
+        if (camposFaltantes.length > 0) {
+            var mensajeError = "Faltan campos por diligenciar:\n\n" + camposFaltantes.join("\n");
             Swal.fire({
-                title: '¡ERROR!',
-                text: 'Ha ocurrido un error técnico al consultar la reserva. Inténtalo nuevamente más tarde.',
-                icon: 'error',
+                title: '¡NO HAS DILIGENCIADO TODOS LOS CAMPOS!',
+                text: mensajeError,
+                icon: 'warning',
                 confirmButtonText: 'Aceptar',
-                imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                imageUrl: 'https://i.ibb.co/CBcrYmF/AVATAR-FALTANCAMPOS-removebg-preview.png',
                 imageWidth: 120,
                 imageHeight: 235,
                 imagePosition: 'top-start'
             });
-        });
+        } else {
+            var claveEventoEliminar = document.getElementById("clave-evento-eliminar").value;
+            console.log(claveEventoEliminar);
+            
+            // Obtener una referencia al documento que se desea verificar/eliminar
+            var reservaRef = firebase.firestore().collection("reservas").doc(claveEventoEliminar);
+
+            // Alerta de carga previa mientras consulta
+            Swal.fire({
+                title: 'Consultando reserva...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            reservaRef.get().then((doc) => {
+                if (doc.exists) {
+                    // El documento existe, proceder con la extracción de datos
+                    var dataReserva = doc.data();
+                    var fechaReservaSub = new Date(dataReserva.fechaEvento);
+                    var fechaReserva = fechaReservaSub.toISOString().slice(0, 10);
+                    var fechaEventoEliminar = fechaEventoEliminarSub.toISOString().slice(0, 10);
+                    var horaReserva = dataReserva.horaEvento;
+                    var duracionReserva = dataReserva.duracionEvento;
+                    var nombreEventoReserva = dataReserva.nombreEvento;
+                    var nombreOrganizadorReserva = dataReserva.nombreOrganizador;
+                    var correoReserva = dataReserva.emailOrganizador;
+                    var planEvento = dataReserva.planEvento;
+                    var observacionesReserva = dataReserva.observacionesEvento;
+                    var modalidadReserva = dataReserva.modalidadEvento;
+                    var ubicacionOPlataforma = dataReserva.ubicacionPlataforma;
+                    var nombrePonente = dataReserva.nombrePonente;
+
+                    // --- ADAPTACIÓN MULTICAPÍTULO PARA VISUALIZACIÓN ---
+                    var capitulosOrganizadoresFirebase = dataReserva.capitulosOrganizadores || (dataReserva.capitulo ? [dataReserva.capitulo] : []);
+                    
+                    const diccionarioNombres = {
+                        "uniguajira": "UNIGUAJIRA", "unimagdalena": "UNIMAGDALENA", "usasm": "USASM",
+                        "unicaribe": "UNICARIBE", "uniatlantico": "UNIATLÁNTICO", "uninorte": "UNINORTE",
+                        "unisimon": "UNISIMÓN", "cuc": "CUC", "librequilla": "LIBREQUILLA",
+                        "utb": "UTB", "upbmonteria": "UPBMONTERÍA", "unicordoba": "UNICÓRDOBA",
+                        "ufps": "UFPS", "unalmed": "UNALMED", "udea": "UDEA", "upbmed": "UPBMED",
+                        "utp": "UTP", "unalma": "UNALMA", "udistrital": "UDISTRITAL", "unalbog": "UNALBOG",
+                        "univalle": "UNIVALLE", "icesi": "ICESI", "uao": "UAO", "usc": "USC", "nacional": "ANEIAP NACIONAL"
+                    };
+                    var capsFormateados = capitulosOrganizadoresFirebase.map(key => diccionarioNombres[key.toLowerCase().trim()] || key.toUpperCase()).join(", ");
+
+                    // Dividir la hora y los minutos en variables
+                    var partesHora = horaEventoEliminar.split(":");
+                    var hora = parseInt(partesHora[0], 10);
+                    var minutos = parseInt(partesHora[1], 10);
+                    
+                    // Calcular el número total de minutos después de la medianoche
+                    var minutosDespuesDeMedianoche = hora * 60 + minutos;
+                    
+                    // Verificar validaciones de seguridad antes de abrir confirmación final
+                    if (fechaReserva !== fechaEventoEliminar) {
+                        Swal.fire({
+                            title: '¡FECHA INCORRECTA!',
+                            text: 'La fecha del evento debe ser exactamente igual a la que tiene la reserva.',
+                            icon: 'warning',
+                            confirmButtonText: 'Aceptar',
+                            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                            imageWidth: 120,
+                            imageHeight: 235,
+                            imagePosition: 'top-start'
+                        });
+                        return;
+                    }
+                    
+                    if (horaReserva !== '' + minutosDespuesDeMedianoche) {
+                        Swal.fire({
+                            title: '¡HORA INCORRECTA!',
+                            text: 'La hora del evento debe ser exactamente igual a la que tiene la reserva.',
+                            icon: 'warning',
+                            confirmButtonText: 'Aceptar',
+                            imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                            imageWidth: 120,
+                            imageHeight: 235,
+                            imagePosition: 'top-start'
+                        });
+                        return;
+                    }
+
+                    // Si las llaves de validación coinciden, se muestra el cuadro con el resumen detallado de la reserva detectada
+                    Swal.fire({
+                        title: '¿CONFIRMAS QUE DESEAS ELIMINAR LA RESERVA?',
+                        html: `
+                            <div style="text-align: left; background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 8px; font-size: 14px;">
+                                <b>📌 Evento:</b> ${nombreEventoReserva}<br>
+                                <b>📅 Fecha:</b> ${fechaReserva}<br>
+                                <b>🎓 Capítulo(s):</b> ${capsFormateados}<br>
+                                <b>👤 Organizador:</b> ${nombreOrganizadorReserva}
+                            </div>
+                            <p style="margin-top: 12px; font-size: 13px; color: #6c757d;">Esta acción es irreversible y removerá el registro de los calendarios.</p>
+                        `,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'CONFIRMO',
+                        cancelButtonText: 'NO',
+                        imageUrl: 'https://i.ibb.co/VSh1RT4/AVATAR-SEGUROELIMINAR-removebg-preview.png',
+                        imageWidth: 120,
+                        imageHeight: 235,
+                        imagePosition: 'top-start',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Re-confirmar spinner de carga de ejecución física
+                            Swal.fire({
+                                title: 'Eliminando documento...',
+                                allowOutsideClick: false,
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+
+                            reservaRef.delete().then(() => {
+                                console.log("Reserva eliminada con éxito.");
+                                
+                                enviarCorreoEliminarEmailJS(claveEventoEliminar, nombreOrganizadorReserva, correoReserva, nombreEventoReserva, fechaReserva, horaReserva, duracionReserva, capitulosOrganizadoresFirebase, planEvento, observacionesReserva, modalidadReserva, ubicacionOPlataforma, nombrePonente);
+                                
+                                // Resetear los campos del formulario
+                                document.getElementById("fecha-evento-eliminar").value = "";
+                                document.getElementById("hora-evento-eliminar").value = "";
+                                document.getElementById("clave-evento-eliminar").value = "";
+                                
+                                // Ocultar el acordeón 3
+                                var content = document.getElementById("acordeon3-content");
+                                content.style.display = "none";
+                                
+                                // Mostrar mensaje de éxito institucional
+                                mostrarMensajeEliminar();
+                            }).catch((error) => {
+                                console.error("NO SE PUDO ELIMINAR LA RESERVA", error);
+                                Swal.fire({
+                                    title: '¡ERROR!',
+                                    text: 'Ha ocurrido un error al intentar eliminar la reserva de la base de datos.',
+                                    icon: 'error',
+                                    confirmButtonText: 'Aceptar',
+                                    imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                                    imageWidth: 120,
+                                    imageHeight: 235,
+                                    imagePosition: 'top-start'
+                                });
+                            });
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'NO EXISTE ESTA RESERVA',
+                        text: 'No se ha encontrado una reserva con la clave proporcionada, rectifica que estás diligenciando la clave correcta.',
+                        icon: 'warning',
+                        confirmButtonText: 'Aceptar',
+                        imageUrl: 'https://i.ibb.co/kJ6gs4J/AVATAR-VALIDACIONDATOS-removebg-preview.png',
+                        imageWidth: 120,
+                        imageHeight: 235,
+                        imagePosition: 'top-start'
+                    });
+                }
+            }).catch((error) => {
+                console.error("ERROR AL CONSULTAR LA RESERVA", error);
+                Swal.fire({
+                    title: '¡ERROR!',
+                    text: 'Ha ocurrido un error técnico al consultar la reserva. Inténtalo nuevamente más tarde.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                    imageUrl: 'https://i.ibb.co/PZ7KXF9/AVATAR-ERRORES-removebg-preview.png',
+                    imageWidth: 120,
+                    imageHeight: 235,
+                    imagePosition: 'top-start'
+                });
+            });
+        }
     }
-}
 
     // Esta función permite la acción de mostrar un mensaje de éxito al momento de registrar una reserva.        
     function mostrarMensajeReservar() {
@@ -6445,397 +6445,618 @@ function eliminarReserva() {
             });
     }
 
+    // ==========================================
+    // MENÚ DE ADMINISTRACIÓN ACTUALIZADO
+    // ==========================================
     function EjecutarAdmin(event) {
-    console.log("Función EjecutarAdmin iniciada.");
+        console.log("Función EjecutarAdmin iniciada.");
 
-    // Verifica si el usuario es administrador mediante correoUsuario
-    if (correoUsuario !== "siea@aneiap.co" && correoUsuario !== "academico@aneiap.co" && correoUsuario !== "formacion_integral@aneiap.co") {
-        console.log("Usuario no autorizado. Mostrando mensaje de advertencia.");
+        // Verifica si el usuario es administrador mediante correoUsuario
+        if (correoUsuario !== "siea@aneiap.co" && correoUsuario !== "academico@aneiap.co" && correoUsuario !== "formacion_integral@aneiap.co") {
+            console.log("Usuario no autorizado. Mostrando mensaje de advertencia.");
+            Swal.fire({
+                title: "¿LA CURIOSIDAD MATÓ AL GATO?",
+                text: "Solo el administrador puede acceder a esta función SECRETA de SIEA. ¿Quieres saber qué es? Sacia tu curiosidad escribiéndole al admin. 👀",
+                icon: "warning",
+                confirmButtonText: "Aceptar",
+                allowOutsideClick: true,
+                backdrop: true,
+                allowEscapeKey: true,
+                imageWidth: 120,
+                imageHeight: 235,
+            });
+            console.log("Fin de la función por falta de permisos.");
+            return;
+        }
+
+        console.log("Usuario autorizado. Continuando con la obtención de documentos.");
+
+        // Mostrar el menú actualizado con las 4 opciones de administración
         Swal.fire({
-        title: "¿LA CURIOSIDAD MATÓ AL GATO?",
-        text: "Solo el administrador puede acceder a esta función SECRETA de SIEA. ¿Quieres saber qué es? Sacia tu curiosidad escribiéndole al admin. 👀",
-        icon: "warning",
-        confirmButtonText: "Aceptar",
-        allowOutsideClick: true,
-        backdrop: true,
-        allowEscapeKey: true,
-        imageWidth: 120,
-        imageHeight: 235,
-        });
-        console.log("Fin de la función por falta de permisos.");
-        return;
-    }
-
-    console.log("Usuario autorizado. Continuando con la obtención de documentos.");
-
-    // Mostrar el menú actualizado con las 3 opciones de administración
-    Swal.fire({
-        title: "Selecciona lo que deseas actualizar",
-        input: 'select',
-        inputOptions: {
-        'editarReserva': 'Editar Reserva',
-        'editarMetasFechas': 'Editar Metas o Fechas',
-        'editarRespuestas': 'Editar Respuestas de Evaluación' // <-- NUEVA OPCIÓN
-        },
-        inputPlaceholder: '¿Qué deseas hacer?',
-        showCancelButton: true,
-        confirmButtonText: 'Continuar',
-        cancelButtonText: 'Cancelar',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-    }).then((result) => {
-        if (!result.isConfirmed) return;
-
-        const opcionSeleccionada = result.value;
-
-        if (opcionSeleccionada === 'editarReserva') {
-        console.log("Opción seleccionada: Editar Reserva");
-        actualizarDocumentoReserva();
-        return;
-        }
-
-        if (opcionSeleccionada === 'editarRespuestas') {
-        console.log("Opción seleccionada: Editar Respuestas de Evaluación");
-        adminEliminarRespuestasIndividuales(); // <-- NUEVO FLUJO LLAMADO
-        return;
-        }
-
-        if (opcionSeleccionada === 'editarMetasFechas') {
-        console.log("Opción seleccionada: Editar Metas o Fechas");
-
-        const metasRef = firebase.firestore().collection("metas");
-
-        metasRef.get().then((snapshot) => {
-            const opcionesMetas = snapshot.docs.map(doc => doc.id);
-
-            return Swal.fire({
-            title: 'Selecciona el documento de metas',
+            title: "Selecciona lo que deseas actualizar",
             input: 'select',
-            inputOptions: opcionesMetas.reduce((acc, metaDoc) => {
-                acc[metaDoc] = metaDoc;
-                return acc;
-            }, {}),
-            inputPlaceholder: 'Selecciona el periodo al que le editarás',
+            inputOptions: {
+                'editarReserva': 'Editar Reserva',
+                'editarMetasFechas': 'Editar Metas o Fechas',
+                'editarRespuestas': 'Editar Respuestas de Evaluación (Reservas)',
+                'editarRespuestasNPSEvento': 'Editar Respuestas NPS Evento (CRM)' // <-- NUEVA OPCIÓN AÑADIDA
+            },
+            inputPlaceholder: '¿Qué deseas hacer?',
             showCancelButton: true,
             confirmButtonText: 'Continuar',
             cancelButtonText: 'Cancelar',
             allowOutsideClick: false,
             allowEscapeKey: false,
-            });
-        }).then((metaResult) => {
-            if (!metaResult || !metaResult.isConfirmed || !metaResult.value) return;
+        }).then((result) => {
+            if (!result.isConfirmed) return;
 
-            const docMetaSeleccionado = metaResult.value;
-            console.log("Documento de metas seleccionado:", docMetaSeleccionado);
+            const opcionSeleccionada = result.value;
 
-            return firebase.firestore().collection("metas").doc(docMetaSeleccionado).get()
-            .then((docMeta) => {
-                if (!docMeta.exists) {
-                Swal.fire('Error', 'No se pudo obtener el documento de metas.', 'error');
+            if (opcionSeleccionada === 'editarReserva') {
+                console.log("Opción seleccionada: Editar Reserva");
+                actualizarDocumentoReserva();
                 return;
-                }
-                const dataMeta = docMeta.data() || {};
+            }
 
-                // Editor de 5 campos (metas + fechas como string yyyy-mm-dd)
-                return Swal.fire({
-                title: `Editar metas/fechas para ${docMetaSeleccionado}`,
+            if (opcionSeleccionada === 'editarRespuestas') {
+                console.log("Opción seleccionada: Editar Respuestas de Evaluación");
+                adminEliminarRespuestasIndividuales();
+                return;
+            }
+
+            if (opcionSeleccionada === 'editarRespuestasNPSEvento') {
+                console.log("Opción seleccionada: Editar Respuestas NPS Evento");
+                adminEliminarRespuestasNPSEvento(); // <-- LLAMADA A LA NUEVA FUNCIÓN
+                return;
+            }
+
+            if (opcionSeleccionada === 'editarMetasFechas') {
+                console.log("Opción seleccionada: Editar Metas o Fechas");
+
+                const metasRef = firebase.firestore().collection("metas");
+
+                metasRef.get().then((snapshot) => {
+                    const opcionesMetas = snapshot.docs.map(doc => doc.id);
+
+                    return Swal.fire({
+                        title: 'Selecciona el documento de metas',
+                        input: 'select',
+                        inputOptions: opcionesMetas.reduce((acc, metaDoc) => {
+                            acc[metaDoc] = metaDoc;
+                            return acc;
+                        }, {}),
+                        inputPlaceholder: 'Selecciona el periodo al que le editarás',
+                        showCancelButton: true,
+                        confirmButtonText: 'Continuar',
+                        cancelButtonText: 'Cancelar',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                    });
+                }).then((metaResult) => {
+                    if (!metaResult || !metaResult.isConfirmed || !metaResult.value) return;
+
+                    const docMetaSeleccionado = metaResult.value;
+                    console.log("Documento de metas seleccionado:", docMetaSeleccionado);
+
+                    return firebase.firestore().collection("metas").doc(docMetaSeleccionado).get()
+                    .then((docMeta) => {
+                        if (!docMeta.exists) {
+                            Swal.fire('Error', 'No se pudo obtener el documento de metas.', 'error');
+                            return;
+                        }
+                        const dataMeta = docMeta.data() || {};
+
+                        return Swal.fire({
+                            title: `Editar metas/fechas para ${docMetaSeleccionado}`,
+                            html: `
+                                <label for="metaVA">Meta VA</label>
+                                <input type="number" id="metaVA" class="swal2-input" value="${dataMeta.metaVA ?? ''}" inputmode="numeric">
+
+                                <label for="metaEI">Meta EI</label>
+                                <input type="number" id="metaEI" class="swal2-input" value="${dataMeta.metaEI ?? ''}" inputmode="numeric">
+
+                                <label for="metaIE">Meta IE</label>
+                                <input type="number" id="metaIE" class="swal2-input" value="${dataMeta.metaIE ?? ''}" inputmode="numeric">
+
+                                <label for="fechaInicioSemestre">Fecha inicio semestre (YYYY-MM-DD)</label>
+                                <input type="date" id="fechaInicioSemestre" class="swal2-input" value="${(dataMeta.fechaInicioSemestre ?? '')}">
+
+                                <label for="fechaFinSemestre">Fecha fin semestre (YYYY-MM-DD)</label>
+                                <input type="date" id="fechaFinSemestre" class="swal2-input" value="${(dataMeta.fechaFinSemestre ?? '')}">
+                            `,
+                            confirmButtonText: 'Actualizar',
+                            showCancelButton: true,
+                            cancelButtonText: 'Cancelar',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            preConfirm: () => {
+                                const getVal = (id) => (document.getElementById(id).value || "").toString().trim();
+
+                                const nuevaMetaVA = Number(getVal('metaVA')); 
+                                const nuevaMetaEI = Number(getVal('metaEI')); 
+                                const nuevaMetaIE = Number(getVal('metaIE')); 
+
+                                const nuevaFechaInicio = getVal('fechaInicioSemestre');
+                                const nuevaFechaFin    = getVal('fechaFinSemestre');
+
+                                if (!nuevaMetaVA || !nuevaMetaEI || !nuevaMetaIE || !nuevaFechaInicio || !nuevaFechaFin) {
+                                    Swal.showValidationMessage('Todos los campos son obligatorios.');
+                                    return false;
+                                }
+
+                                const isoRegex = /^\d{4}-\d{2}-\d{2}$/;
+                                if (!isoRegex.test(nuevaFechaInicio) || !isoRegex.test(nuevaFechaFin)) {
+                                    Swal.showValidationMessage('Las fechas deben tener formato YYYY-MM-DD.');
+                                    return false;
+                                }
+
+                                const isValidISODate = (s) => {
+                                    const [y, m, d] = s.split('-').map(Number);
+                                    const dt = new Date(Date.UTC(y, m - 1, d));
+                                    return dt.getUTCFullYear() === y && (dt.getUTCMonth() + 1) === m && dt.getUTCDate() === d;
+                                };
+                                if (!isValidISODate(nuevaFechaInicio) || !isValidISODate(nuevaFechaFin)) {
+                                    Swal.showValidationMessage('Alguna de las fechas no es válida en el calendario.');
+                                    return false;
+                                }
+
+                                return firebase.firestore().collection("metas").doc(docMetaSeleccionado).update({
+                                    metaVA: nuevaMetaVA,
+                                    metaEI: nuevaMetaEI,
+                                    metaIE: nuevaMetaIE,
+                                    fechaInicioSemestre: nuevaFechaInicio,
+                                    fechaFinSemestre:    nuevaFechaFin 
+                                }).then(() => {
+                                    Swal.fire('Actualizado', 'Los datos se han actualizado correctamente.', 'success');
+                                }).catch((error) => {
+                                    Swal.fire('Error', 'No se pudieron actualizar los datos.', 'error');
+                                });
+                            }
+                        });
+                    }).catch((error) => {
+                        Swal.fire('Error', 'No se pudo obtener el documento de metas.', 'error');
+                    });
+                }).catch((error) => {
+                    Swal.fire('Error', 'No se pudo cargar los documentos de metas.', 'error');
+                });
+            }
+        });
+    }
+
+    // =========================================================================
+    // NUEVA FUNCIÓN: ELIMINAR Y GESTIONAR RESPUESTAS INDIVIDUALES NPS CRM EVENTOS
+    // =========================================================================
+    function adminEliminarRespuestasNPSEvento() {
+        Swal.fire({
+            title: 'Cargando eventos CRM...',
+            text: 'Por favor espera mientras obtenemos la lista de eventos.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        // 1. Consultar la colección "crmeventos"
+        firebase.firestore().collection("crmeventos").get().then((snapshot) => {
+            if (snapshot.empty) {
+                Swal.fire('Sin Eventos', 'No se encontraron eventos en la base de datos CRM.', 'info');
+                return;
+            }
+
+            // 2. Construir datalist dinámico para seleccionar eventos por clave o id
+            let opcionesHTML = '';
+            snapshot.docs.forEach(doc => {
+                let dataEv = doc.data();
+                let nombreEv = dataEv.nombrecrmEvento || "Evento sin nombre";
+                let claveEv = dataEv.clavecrmEvento || doc.id;
+                
+                opcionesHTML += `<option value="${doc.id}">${nombreEv} | Clave: ${claveEv}</option>`;
+            });
+
+            // 3. Alerta con input y datalist
+            return Swal.fire({
+                title: 'Buscar Evento CRM',
                 html: `
-                    <label for="metaVA">Meta VA</label>
-                    <input type="number" id="metaVA" class="swal2-input" value="${dataMeta.metaVA ?? ''}" inputmode="numeric">
-
-                    <label for="metaEI">Meta EI</label>
-                    <input type="number" id="metaEI" class="swal2-input" value="${dataMeta.metaEI ?? ''}" inputmode="numeric">
-
-                    <label for="metaIE">Meta IE</label>
-                    <input type="number" id="metaIE" class="swal2-input" value="${dataMeta.metaIE ?? ''}" inputmode="numeric">
-
-                    <label for="fechaInicioSemestre">Fecha inicio semestre (YYYY-MM-DD)</label>
-                    <input type="date" id="fechaInicioSemestre" class="swal2-input" value="${(dataMeta.fechaInicioSemestre ?? '')}">
-
-                    <label for="fechaFinSemestre">Fecha fin semestre (YYYY-MM-DD)</label>
-                    <input type="date" id="fechaFinSemestre" class="swal2-input" value="${(dataMeta.fechaFinSemestre ?? '')}">
+                    <p style="font-size: 14px; color: #555; text-align: left; margin-bottom: 8px;">
+                        Selecciona o escribe el ID/Clave del evento CRM para consultar sus respuestas:
+                    </p>
+                    <input type="text" id="claveAdminEventoCRM" class="swal2-input" placeholder="Escribe o selecciona un evento..." list="eventosCRMSugeridos" autocomplete="off" style="width: 100%; box-sizing: border-box; margin: 0;">
+                    <datalist id="eventosCRMSugeridos">
+                        ${opcionesHTML}
+                    </datalist>
                 `,
-                confirmButtonText: 'Actualizar',
                 showCancelButton: true,
+                confirmButtonText: 'Buscar respuestas',
                 cancelButtonText: 'Cancelar',
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 preConfirm: () => {
-                    const getVal = (id) => (document.getElementById(id).value || "").toString().trim();
-
-                    const nuevaMetaVA = Number(getVal('metaVA')); 
-                    const nuevaMetaEI = Number(getVal('metaEI')); 
-                    const nuevaMetaIE = Number(getVal('metaIE')); 
-
-                    const nuevaFechaInicio = getVal('fechaInicioSemestre');
-                    const nuevaFechaFin    = getVal('fechaFinSemestre');
-
-                    if (!nuevaMetaVA || !nuevaMetaEI || !nuevaMetaIE || !nuevaFechaInicio || !nuevaFechaFin) {
-                    Swal.showValidationMessage('Todos los campos son obligatorios.');
-                    return false;
+                    const inputVal = document.getElementById('claveAdminEventoCRM').value.trim();
+                    if (!inputVal) {
+                        Swal.showValidationMessage('Debes ingresar o seleccionar una clave de evento CRM.');
+                        return false;
                     }
-
-                    const isoRegex = /^\d{4}-\d{2}-\d{2}$/;
-                    if (!isoRegex.test(nuevaFechaInicio) || !isoRegex.test(nuevaFechaFin)) {
-                    Swal.showValidationMessage('Las fechas deben tener formato YYYY-MM-DD.');
-                    return false;
-                    }
-
-                    const isValidISODate = (s) => {
-                    const [y, m, d] = s.split('-').map(Number);
-                    const dt = new Date(Date.UTC(y, m - 1, d));
-                    return dt.getUTCFullYear() === y && (dt.getUTCMonth() + 1) === m && dt.getUTCDate() === d;
-                    };
-                    if (!isValidISODate(nuevaFechaInicio) || !isValidISODate(nuevaFechaFin)) {
-                    Swal.showValidationMessage('Alguna de las fechas no es válida en el calendario.');
-                    return false;
-                    }
-
-                    return firebase.firestore().collection("metas").doc(docMetaSeleccionado).update({
-                    metaVA: nuevaMetaVA,
-                    metaEI: nuevaMetaEI,
-                    metaIE: nuevaMetaIE,
-                    fechaInicioSemestre: nuevaFechaInicio,
-                    fechaFinSemestre:    nuevaFechaFin 
-                    }).then(() => {
-                    Swal.fire('Actualizado', 'Los datos se han actualizado correctamente.', 'success');
-                    }).catch((error) => {
-                    Swal.fire('Error', 'No se pudieron actualizar los datos.', 'error');
-                    });
+                    return inputVal;
                 }
+            });
+        }).then((result) => {
+            if (!result || !result.isConfirmed || !result.value) return;
+
+            const idEventoCRM = result.value;
+            const docRef = firebase.firestore().collection("crmeventos").doc(idEventoCRM);
+
+            Swal.fire({
+                title: 'Cargando respuestas del evento...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // 4. Obtener documento del evento CRM utilizando los nombres reales de los campos
+            docRef.get().then((doc) => {
+                if (!doc.exists) {
+                    Swal.fire('¡No Encontrado!', 'No existe ningún evento CRM guardado con esa clave/ID.', 'error');
+                    return;
+                }
+
+                var data = doc.data();
+                
+                // Extraer y deserializar vectores concatenados por pipe '|' usando los nombres exactos de Firestore
+                var nombres = (data.nombrescrmAsistentes || "").split("|");
+                var correos = (data.correoscrmAsistentes || "").split("|");
+                var telefonos = (data.telefonoscrmAsistentes || "").split("|");
+                var comentarios = (data.comentarioscrm || "").split("|");
+
+                // Matriz para almacenar las 14 respuestas (respuestascrm1 a respuestascrm14)
+                var respuestasR = {};
+                for (let k = 1; k <= 14; k++) {
+                    respuestasR[`respuestascrm${k}`] = (data[`respuestascrm${k}`] || "").split("|");
+                }
+
+                // Limpiar remanentes vacíos del split (generados por el pipe final)
+                if (nombres[nombres.length - 1] === "") nombres.pop();
+                if (correos[correos.length - 1] === "") correos.pop();
+                if (telefonos[telefonos.length - 1] === "") telefonos.pop();
+                if (comentarios[comentarios.length - 1] === "") comentarios.pop();
+
+                for (let k = 1; k <= 14; k++) {
+                    if (respuestasR[`respuestascrm${k}`][respuestasR[`respuestascrm${k}`].length - 1] === "") {
+                        respuestasR[`respuestascrm${k}`].pop();
+                    }
+                }
+
+                if (nombres.length === 0) {
+                    Swal.fire('Sin Respuestas', 'Este evento existe en CRM pero no registra evaluaciones aún.', 'info');
+                    return;
+                }
+
+                // 5. Construir listado de checkbox simple (Nombre, Correo, Teléfono, Comentario)
+                let htmlOpciones = `<p style="font-size:14px; color:#555; text-align:left; margin-bottom:10px;">Selecciona la(s) respuesta(s) que deseas <b>ELIMINAR PERMANENTEMENTE</b> del evento CRM:</p>`;
+                htmlOpciones += `<div style="text-align: left; max-height: 280px; overflow-y: auto; background:#f8f9fa; padding:10px; border-radius:5px; border:1px solid #ddd;">`;
+                
+                for (let i = 0; i < nombres.length; i++) {
+                    htmlOpciones += `
+                    <div style="margin-bottom: 8px; display: flex; align-items: flex-start;">
+                        <input type="checkbox" id="chk-crm-respuesta-${i}" value="${i}" style="margin-top:4px; margin-right:8px; cursor:pointer;">
+                        <label for="chk-crm-respuesta-${i}" style="cursor:pointer; font-size:13px; line-height:1.3;">
+                            <b>${nombres[i]}</b> (${correos[i] || 'Sin correo'}) | 📱 Tel: ${telefonos[i] || 'N/A'}<br>
+                            <span style="color:#555; font-style:italic;">💬 Comentario: "${comentarios[i] || 'Sin comentario'}"</span>
+                        </label>
+                    </div>
+                    <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                    `;
+                }
+                htmlOpciones += `</div>`;
+
+                // 6. Confirmación de eliminación
+                Swal.fire({
+                    title: `Respuestas CRM: "${data.nombrecrmEvento || doc.id}"`,
+                    html: htmlOpciones,
+                    width: '650px',
+                    showCancelButton: true,
+                    confirmButtonText: '❌ Eliminar seleccionadas',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#d90429',
+                    allowOutsideClick: false,
+                    preConfirm: () => {
+                        let indicesAEliminar = [];
+                        for (let i = 0; i < nombres.length; i++) {
+                            if (document.getElementById(`chk-crm-respuesta-${i}`).checked) {
+                                indicesAEliminar.push(i);
+                            }
+                        }
+                        if (indicesAEliminar.length === 0) {
+                            Swal.showValidationMessage('Debes seleccionar al menos una respuesta para eliminar.');
+                            return false;
+                        }
+                        return indicesAEliminar;
+                    }
+                }).then((checkboxResult) => {
+                    if (!checkboxResult.isConfirmed) return;
+
+                    const indicesAEliminar = checkboxResult.value;
+
+                    Swal.fire({
+                        title: 'Depurando y actualizando evento CRM...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    // 7. Remover elementos simétricamente en orden inverso
+                    for (let j = indicesAEliminar.length - 1; j >= 0; j--) {
+                        let idx = indicesAEliminar[j];
+                        nombres.splice(idx, 1);
+                        correos.splice(idx, 1);
+                        telefonos.splice(idx, 1);
+                        comentarios.splice(idx, 1);
+
+                        for (let k = 1; k <= 14; k++) {
+                            if (respuestasR[`respuestascrm${k}`].length > idx) {
+                                respuestasR[`respuestascrm${k}`].splice(idx, 1);
+                            }
+                        }
+                    }
+
+                    // 8. Reempaquetar los campos vectoriales conservando la estructura de Firebase ('|' al final)
+                    var dataActualizada = {
+                        nombrescrmAsistentes: nombres.length > 0 ? nombres.join("|") + "|" : "",
+                        correoscrmAsistentes: correos.length > 0 ? correos.join("|") + "|" : "",
+                        telefonoscrmAsistentes: telefonos.length > 0 ? telefonos.join("|") + "|" : "",
+                        comentarioscrm: comentarios.length > 0 ? comentarios.join("|") + "|" : ""
+                    };
+
+                    for (let k = 1; k <= 14; k++) {
+                        dataActualizada[`respuestascrm${k}`] = respuestasR[`respuestascrm${k}`].length > 0 ? respuestasR[`respuestascrm${k}`].join("|") + "|" : "";
+                    }
+
+                    // 9. Guardar los datos en Firestore y refrescar
+                    docRef.set(dataActualizada, { merge: true }).then(function() {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Respuestas CRM Depuradas!',
+                            text: `Se eliminaron ${indicesAEliminar.length} registros seleccionados correctamente.`,
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            if (typeof consultarRespuestasEvento === 'function') {
+                                consultarRespuestasEvento();
+                            }
+                        });
+                    }).catch(function(error) {
+                        console.error("Error al actualizar evento CRM:", error);
+                        Swal.fire('¡Error!', 'No se pudieron escribir los cambios en Firestore.', 'error');
+                    });
                 });
             }).catch((error) => {
-                Swal.fire('Error', 'No se pudo obtener el documento de metas.', 'error');
+                console.error("Error al leer el documento CRM:", error);
+                Swal.fire('¡Error!', 'Hubo un fallo al consultar los datos del servidor.', 'error');
             });
         }).catch((error) => {
-            Swal.fire('Error', 'No se pudo cargar los documentos de metas.', 'error');
+            console.error("Error al precargar eventos CRM:", error);
+            Swal.fire('¡Error!', 'No se pudo generar el listado de sugerencias de la colección CRM.', 'error');
         });
-        }
-    });
     }
 
 
     function adminEliminarRespuestasIndividuales() {
-    Swal.fire({
-        title: 'Cargando sugerencias...',
-        text: 'Por favor espera mientras obtenemos el listado de claves.',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
-
-    // 1. Consultar rápidamente Firestore para extraer las claves (IDs) y nombres de los eventos
-    firebase.firestore().collection("reservas").get().then((snapshot) => {
-        if (snapshot.empty) {
-        Swal.fire('Sin Eventos', 'No se encontraron reservas en la base de datos.', 'info');
-        return;
-        }
-
-        // 2. Construir dinámicamente las etiquetas <option> para el datalist
-        let opcionesHTML = '';
-        snapshot.docs.forEach(doc => {
-        let dataEv = doc.data();
-        let nombreEv = dataEv.nombreEvento || "Evento sin nombre";
-        let fechaEv = dataEv.fechaEvento || "";
-        
-        // El valor clave va en el atributo 'value'. El texto de apoyo va en el label
-        opcionesHTML += `<option value="${doc.id}">${nombreEv} (${fechaEv})</option>`;
-        });
-
-        // 3. Lanzar la alerta con el input enlazado al datalist por medio del atributo 'list'
-        return Swal.fire({
-        title: 'Clave del Evento',
-        html: `
-            <p style="font-size: 14px; color: #555; text-align: left; margin-bottom: 8px;">
-            Ingresa la clave de la reserva o selecciona una del menú de sugerencias que aparece al escribir:
-            </p>
-            <input type="text" id="claveAdminRespuestas" class="swal2-input" placeholder="Escribe o selecciona una clave..." list="clavesSugeridas" autocomplete="off" style="width: 100%; box-sizing: border-box; margin: 0;">
-            <datalist id="clavesSugeridas">
-            ${opcionesHTML}
-            </datalist>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Buscar respuestas',
-        cancelButtonText: 'Cancelar',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        preConfirm: () => {
-            const inputVal = document.getElementById('claveAdminRespuestas').value.trim();
-            if (!inputVal) {
-            Swal.showValidationMessage('Debes ingresar o seleccionar una clave de reserva.');
-            return false;
-            }
-            return inputVal;
-        }
-        });
-    }).then((result) => {
-        // Si cancela o cierra la alerta, salimos de manera segura
-        if (!result || !result.isConfirmed || !result.value) return;
-
-        const claveEvento = result.value;
-        const docRef = firebase.firestore().collection("reservas").doc(claveEvento);
-
         Swal.fire({
-        title: 'Cargando evaluaciones...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-        });
-
-        // 4. Cargar el documento específico de la reserva seleccionada
-        docRef.get().then((doc) => {
-        if (!doc.exists) {
-            Swal.fire('¡No Encontrado!', 'No existe ninguna reserva guardada con esa clave. Rectifica que esté bien escrita.', 'error');
-            return;
-        }
-
-        var data = doc.data();
-        var asistentes = (data.asistentes || "").split("|");
-        var correosAsistentes = (data.correosAsistentes || "").split("|");
-        var telefonosAsistentes = (data.telefonosAsistentes || "").split("|");
-        var respuestas1 = (data.respuestas1 || "").split("|");
-        var respuestas2 = (data.respuestas2 || "").split("|");
-        var respuestas3 = (data.respuestas3 || "").split("|");
-        var comentarios = (data.comentarios || "").split("|");
-
-        // Limpiar remanentes vacíos del split
-        if (asistentes[asistentes.length - 1] === "") asistentes.pop();
-        if (correosAsistentes[correosAsistentes.length - 1] === "") correosAsistentes.pop();
-        if (telefonosAsistentes[telefonosAsistentes.length - 1] === "") telefonosAsistentes.pop();
-        if (respuestas1[respuestas1.length - 1] === "") respuestas1.pop();
-        if (respuestas2[respuestas2.length - 1] === "") respuestas2.pop();
-        if (respuestas3[respuestas3.length - 1] === "") respuestas3.pop();
-        if (comentarios[comentarios.length - 1] === "") comentarios.pop();
-
-        if (asistentes.length === 0) {
-            Swal.fire('Sin Evaluaciones', 'Este evento existe, pero ningún asistente lo ha evaluado todavía.', 'info');
-            return;
-        }
-
-        // 5. Construir el panel de Checkboxes dinámicos
-        let htmlOpciones = `<p style="font-size:14px; color:#555; text-align:left; margin-bottom:10px;">Selecciona la(s) respuesta(s) que deseas <b>ELIMINAR PERMANENTEMENTE</b>:</p>`;
-        htmlOpciones += `<div style="text-align: left; max-height: 250px; overflow-y: auto; background:#f8f9fa; padding:10px; border-radius:5px; border:1px solid #ddd;">`;
-        
-        for (let i = 0; i < asistentes.length; i++) {
-            htmlOpciones += `
-            <div style="margin-bottom: 8px; display: flex; align-items: flex-start;">
-                <input type="checkbox" id="chk-respuesta-${i}" value="${i}" style="margin-top:4px; margin-right:8px; cursor:pointer;">
-                <label for="chk-respuesta-${i}" style="cursor:pointer; font-size:13px; line-height:1.3;">
-                <b>${asistentes[i]}</b> (${correosAsistentes[i] || 'Sin correo'})<br>
-                <span style="color:#777;">P1: ${respuestas1[i]} | P2: ${respuestas2[i]} | P3: ${respuestas3[i]} | Coms: "${comentarios[i]}"</span>
-                </label>
-            </div>
-            <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
-            `;
-        }
-        htmlOpciones += `</div>`;
-
-        // 6. Lanzar panel para confirmar remoción
-        Swal.fire({
-            title: `Respuestas de "${data.nombreEvento}"`,
-            html: htmlOpciones,
-            showCancelButton: true,
-            confirmButtonText: '❌ Eliminar seleccionadas',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#d90429',
+            title: 'Cargando sugerencias...',
+            text: 'Por favor espera mientras obtenemos el listado de claves.',
             allowOutsideClick: false,
-            preConfirm: () => {
-            let indicesAEliminar = [];
-            for (let i = 0; i < asistentes.length; i++) {
-                if (document.getElementById(`chk-respuesta-${i}`).checked) {
-                indicesAEliminar.push(i);
-                }
-            }
-            if (indicesAEliminar.length === 0) {
-                Swal.showValidationMessage('Debes seleccionar al menos una respuesta para eliminar.');
-                return false;
-            }
-            return indicesAEliminar;
-            }
-        }).then((checkboxResult) => {
-            if (!checkboxResult.isConfirmed) return;
+            didOpen: () => { Swal.showLoading(); }
+        });
 
-            const indicesAEliminar = checkboxResult.value;
+        // 1. Consultar rápidamente Firestore para extraer las claves (IDs) y nombres de los eventos
+        firebase.firestore().collection("reservas").get().then((snapshot) => {
+            if (snapshot.empty) {
+            Swal.fire('Sin Eventos', 'No se encontraron reservas en la base de datos.', 'info');
+            return;
+            }
+
+            // 2. Construir dinámicamente las etiquetas <option> para el datalist
+            let opcionesHTML = '';
+            snapshot.docs.forEach(doc => {
+            let dataEv = doc.data();
+            let nombreEv = dataEv.nombreEvento || "Evento sin nombre";
+            let fechaEv = dataEv.fechaEvento || "";
+            
+            // El valor clave va en el atributo 'value'. El texto de apoyo va en el label
+            opcionesHTML += `<option value="${doc.id}">${nombreEv} (${fechaEv})</option>`;
+            });
+
+            // 3. Lanzar la alerta con el input enlazado al datalist por medio del atributo 'list'
+            return Swal.fire({
+            title: 'Clave del Evento',
+            html: `
+                <p style="font-size: 14px; color: #555; text-align: left; margin-bottom: 8px;">
+                Ingresa la clave de la reserva o selecciona una del menú de sugerencias que aparece al escribir:
+                </p>
+                <input type="text" id="claveAdminRespuestas" class="swal2-input" placeholder="Escribe o selecciona una clave..." list="clavesSugeridas" autocomplete="off" style="width: 100%; box-sizing: border-box; margin: 0;">
+                <datalist id="clavesSugeridas">
+                ${opcionesHTML}
+                </datalist>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Buscar respuestas',
+            cancelButtonText: 'Cancelar',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            preConfirm: () => {
+                const inputVal = document.getElementById('claveAdminRespuestas').value.trim();
+                if (!inputVal) {
+                Swal.showValidationMessage('Debes ingresar o seleccionar una clave de reserva.');
+                return false;
+                }
+                return inputVal;
+            }
+            });
+        }).then((result) => {
+            // Si cancela o cierra la alerta, salimos de manera segura
+            if (!result || !result.isConfirmed || !result.value) return;
+
+            const claveEvento = result.value;
+            const docRef = firebase.firestore().collection("reservas").doc(claveEvento);
 
             Swal.fire({
-            title: 'Removiendo y recalculando...',
+            title: 'Cargando evaluaciones...',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
             });
 
-            // 7. Remover elementos simétricamente de atrás hacia adelante
-            for (let j = indicesAEliminar.length - 1; j >= 0; j--) {
-            let idx = indicesAEliminar[j];
-            asistentes.splice(idx, 1);
-            correosAsistentes.splice(idx, 1);
-            telefonosAsistentes.splice(idx, 1);
-            respuestas1.splice(idx, 1);
-            respuestas2.splice(idx, 1);
-            respuestas3.splice(idx, 1);
-            comentarios.splice(idx, 1);
+            // 4. Cargar el documento específico de la reserva seleccionada
+            docRef.get().then((doc) => {
+            if (!doc.exists) {
+                Swal.fire('¡No Encontrado!', 'No existe ninguna reserva guardada con esa clave. Rectifica que esté bien escrita.', 'error');
+                return;
             }
 
-            // 8. RECALCULAR INDICADORES NPS DESDE CERO
-            var nuevosDetractores = 0;
-            var nuevosPasivos = 0;
-            var nuevosPromotores = 0;
+            var data = doc.data();
+            var asistentes = (data.asistentes || "").split("|");
+            var correosAsistentes = (data.correosAsistentes || "").split("|");
+            var telefonosAsistentes = (data.telefonosAsistentes || "").split("|");
+            var respuestas1 = (data.respuestas1 || "").split("|");
+            var respuestas2 = (data.respuestas2 || "").split("|");
+            var respuestas3 = (data.respuestas3 || "").split("|");
+            var comentarios = (data.comentarios || "").split("|");
 
-            function clasificarPuntuacion(valor) {
-            var score = parseInt(valor);
-            if (!isNaN(score)) {
-                if (score >= 0 && score <= 6) nuevosDetractores++;
-                else if (score === 7 || score === 8) nuevosPasivos++;
-                else if (score === 9 || score === 10) nuevosPromotores++;
+            // Limpiar remanentes vacíos del split
+            if (asistentes[asistentes.length - 1] === "") asistentes.pop();
+            if (correosAsistentes[correosAsistentes.length - 1] === "") correosAsistentes.pop();
+            if (telefonosAsistentes[telefonosAsistentes.length - 1] === "") telefonosAsistentes.pop();
+            if (respuestas1[respuestas1.length - 1] === "") respuestas1.pop();
+            if (respuestas2[respuestas2.length - 1] === "") respuestas2.pop();
+            if (respuestas3[respuestas3.length - 1] === "") respuestas3.pop();
+            if (comentarios[comentarios.length - 1] === "") comentarios.pop();
+
+            if (asistentes.length === 0) {
+                Swal.fire('Sin Evaluaciones', 'Este evento existe, pero ningún asistente lo ha evaluado todavía.', 'info');
+                return;
             }
+
+            // 5. Construir el panel de Checkboxes dinámicos
+            let htmlOpciones = `<p style="font-size:14px; color:#555; text-align:left; margin-bottom:10px;">Selecciona la(s) respuesta(s) que deseas <b>ELIMINAR PERMANENTEMENTE</b>:</p>`;
+            htmlOpciones += `<div style="text-align: left; max-height: 250px; overflow-y: auto; background:#f8f9fa; padding:10px; border-radius:5px; border:1px solid #ddd;">`;
+            
+            for (let i = 0; i < asistentes.length; i++) {
+                htmlOpciones += `
+                <div style="margin-bottom: 8px; display: flex; align-items: flex-start;">
+                    <input type="checkbox" id="chk-respuesta-${i}" value="${i}" style="margin-top:4px; margin-right:8px; cursor:pointer;">
+                    <label for="chk-respuesta-${i}" style="cursor:pointer; font-size:13px; line-height:1.3;">
+                    <b>${asistentes[i]}</b> (${correosAsistentes[i] || 'Sin correo'})<br>
+                    <span style="color:#777;">P1: ${respuestas1[i]} | P2: ${respuestas2[i]} | P3: ${respuestas3[i]} | Coms: "${comentarios[i]}"</span>
+                    </label>
+                </div>
+                <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                `;
             }
+            htmlOpciones += `</div>`;
 
-            respuestas1.forEach(clasificarPuntuacion);
-            respuestas2.forEach(clasificarPuntuacion);
-            respuestas3.forEach(clasificarPuntuacion);
-
-            var totalCriterios = nuevosPromotores + nuevosPasivos + nuevosDetractores;
-            var nuevaSatisfaccion = totalCriterios > 0 ? (nuevosPromotores - nuevosDetractores) / totalCriterios : 0;
-
-            // 9. Volver a empaquetar cadenas con pipes terminales
-            var dataActualizada = {
-            asistentes: asistentes.length > 0 ? asistentes.join("|") + "|" : "",
-            correosAsistentes: correosAsistentes.length > 0 ? correosAsistentes.join("|") + "|" : "",
-            telefonosAsistentes: telefonosAsistentes.length > 0 ? telefonosAsistentes.join("|") + "|" : "",
-            respuestas1: respuestas1.length > 0 ? respuestas1.join("|") + "|" : "",
-            respuestas2: respuestas2.length > 0 ? respuestas2.join("|") + "|" : "",
-            respuestas3: respuestas3.length > 0 ? respuestas3.join("|") + "|" : "",
-            comentarios: comentarios.length > 0 ? comentarios.join("|") + "|" : "",
-            detractores: nuevosDetractores,
-            pasivos: nuevosPasivos,
-            promotores: nuevosPromotores,
-            satisfaccion: nuevaSatisfaccion
-            };
-
-            // 10. Actualizar base de datos y refrescar la tabla en pantalla
-            docRef.set(dataActualizada, { merge: true }).then(function() {
+            // 6. Lanzar panel para confirmar remoción
             Swal.fire({
-                icon: 'success',
-                title: '¡Respuestas Depuradas!',
-                text: `Se eliminaron correctamente las ${indicesAEliminar.length} encuestas seleccionadas y se actualizaron las métricas en Firebase de forma exitosa.`,
-                confirmButtonText: 'Aceptar'
-            }).then(() => {
-                var selectEvaluaciones = document.getElementById("nombre-espacio-consultar-evaluaciones");
-                if (selectEvaluaciones && selectEvaluaciones.value === data.nombreEvento) {
-                consultarEvaluaciones();
+                title: `Respuestas de "${data.nombreEvento}"`,
+                html: htmlOpciones,
+                showCancelButton: true,
+                confirmButtonText: '❌ Eliminar seleccionadas',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#d90429',
+                allowOutsideClick: false,
+                preConfirm: () => {
+                let indicesAEliminar = [];
+                for (let i = 0; i < asistentes.length; i++) {
+                    if (document.getElementById(`chk-respuesta-${i}`).checked) {
+                    indicesAEliminar.push(i);
+                    }
                 }
+                if (indicesAEliminar.length === 0) {
+                    Swal.showValidationMessage('Debes seleccionar al menos una respuesta para eliminar.');
+                    return false;
+                }
+                return indicesAEliminar;
+                }
+            }).then((checkboxResult) => {
+                if (!checkboxResult.isConfirmed) return;
+
+                const indicesAEliminar = checkboxResult.value;
+
+                Swal.fire({
+                title: 'Removiendo y recalculando...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+                });
+
+                // 7. Remover elementos simétricamente de atrás hacia adelante
+                for (let j = indicesAEliminar.length - 1; j >= 0; j--) {
+                let idx = indicesAEliminar[j];
+                asistentes.splice(idx, 1);
+                correosAsistentes.splice(idx, 1);
+                telefonosAsistentes.splice(idx, 1);
+                respuestas1.splice(idx, 1);
+                respuestas2.splice(idx, 1);
+                respuestas3.splice(idx, 1);
+                comentarios.splice(idx, 1);
+                }
+
+                // 8. RECALCULAR INDICADORES NPS DESDE CERO
+                var nuevosDetractores = 0;
+                var nuevosPasivos = 0;
+                var nuevosPromotores = 0;
+
+                function clasificarPuntuacion(valor) {
+                var score = parseInt(valor);
+                if (!isNaN(score)) {
+                    if (score >= 0 && score <= 6) nuevosDetractores++;
+                    else if (score === 7 || score === 8) nuevosPasivos++;
+                    else if (score === 9 || score === 10) nuevosPromotores++;
+                }
+                }
+
+                respuestas1.forEach(clasificarPuntuacion);
+                respuestas2.forEach(clasificarPuntuacion);
+                respuestas3.forEach(clasificarPuntuacion);
+
+                var totalCriterios = nuevosPromotores + nuevosPasivos + nuevosDetractores;
+                var nuevaSatisfaccion = totalCriterios > 0 ? (nuevosPromotores - nuevosDetractores) / totalCriterios : 0;
+
+                // 9. Volver a empaquetar cadenas con pipes terminales
+                var dataActualizada = {
+                asistentes: asistentes.length > 0 ? asistentes.join("|") + "|" : "",
+                correosAsistentes: correosAsistentes.length > 0 ? correosAsistentes.join("|") + "|" : "",
+                telefonosAsistentes: telefonosAsistentes.length > 0 ? telefonosAsistentes.join("|") + "|" : "",
+                respuestas1: respuestas1.length > 0 ? respuestas1.join("|") + "|" : "",
+                respuestas2: respuestas2.length > 0 ? respuestas2.join("|") + "|" : "",
+                respuestas3: respuestas3.length > 0 ? respuestas3.join("|") + "|" : "",
+                comentarios: comentarios.length > 0 ? comentarios.join("|") + "|" : "",
+                detractores: nuevosDetractores,
+                pasivos: nuevosPasivos,
+                promotores: nuevosPromotores,
+                satisfaccion: nuevaSatisfaccion
+                };
+
+                // 10. Actualizar base de datos y refrescar la tabla en pantalla
+                docRef.set(dataActualizada, { merge: true }).then(function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Respuestas Depuradas!',
+                    text: `Se eliminaron correctamente las ${indicesAEliminar.length} encuestas seleccionadas y se actualizaron las métricas en Firebase de forma exitosa.`,
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    var selectEvaluaciones = document.getElementById("nombre-espacio-consultar-evaluaciones");
+                    if (selectEvaluaciones && selectEvaluaciones.value === data.nombreEvento) {
+                    consultarEvaluaciones();
+                    }
+                });
+                }).catch(function(error) {
+                console.error("Error al guardar la limpieza del admin:", error);
+                Swal.fire('¡Error!', 'No se pudieron escribir los cambios en Firestore.', 'error');
+                });
             });
-            }).catch(function(error) {
-            console.error("Error al guardar la limpieza del admin:", error);
-            Swal.fire('¡Error!', 'No se pudieron escribir los cambios en Firestore.', 'error');
+            }).catch((error) => {
+            console.error("Error al leer la reserva como admin:", error);
+            Swal.fire('¡Error!', 'Hubo un fallo al consultar los datos del servidor.', 'error');
             });
-        });
         }).catch((error) => {
-        console.error("Error al leer la reserva como admin:", error);
-        Swal.fire('¡Error!', 'Hubo un fallo al consultar los datos del servidor.', 'error');
+            console.error("Error al precargar el datalist:", error);
+            Swal.fire('¡Error!', 'No se pudo generar el listado de sugerencias.', 'error');
         });
-    }).catch((error) => {
-        console.error("Error al precargar el datalist:", error);
-        Swal.fire('¡Error!', 'No se pudo generar el listado de sugerencias.', 'error');
-    });
-    }
+        }
+
+
 
     function actualizarDocumentoReserva() {
         // Aquí va el código que ya tenías para editar la reserva.
@@ -12767,56 +12988,56 @@ Este texto es ejemplar de como usted debe escribir la parte analizando los 3 mej
       });
     }
   
-async function descargarDatosMultiplesColeccionesExcel() {
-    // Referencias a las colecciones de Firebase
-    const colecciones = [
-        { nombre: "reservas", ref: firebase.firestore().collection("reservas") },
-        { nombre: "cuentas", ref: firebase.firestore().collection("cuentas") },
-        { nombre: "piezas", ref: firebase.firestore().collection("piezas") },
-        { nombre: "crmeventos", ref: firebase.firestore().collection("crmeventos") }
-    ];
+    async function descargarDatosMultiplesColeccionesExcel() {
+        // Referencias a las colecciones de Firebase
+        const colecciones = [
+            { nombre: "reservas", ref: firebase.firestore().collection("reservas") },
+            { nombre: "cuentas", ref: firebase.firestore().collection("cuentas") },
+            { nombre: "piezas", ref: firebase.firestore().collection("piezas") },
+            { nombre: "crmeventos", ref: firebase.firestore().collection("crmeventos") }
+        ];
 
-    try {
-        // Crear un nuevo libro de trabajo
-        const workbook = XLSX.utils.book_new();
+        try {
+            // Crear un nuevo libro de trabajo
+            const workbook = XLSX.utils.book_new();
 
-        for (const coleccion of colecciones) {
-            const querySnapshot = await coleccion.ref.get();
-            const data = [];
+            for (const coleccion of colecciones) {
+                const querySnapshot = await coleccion.ref.get();
+                const data = [];
 
-            // Procesar cada documento de la colección
-            querySnapshot.forEach(doc => {
-                const docData = doc.data();
-                docData.id = doc.id; // Añadir el ID del documento como un campo
+                // Procesar cada documento de la colección
+                querySnapshot.forEach(doc => {
+                    const docData = doc.data();
+                    docData.id = doc.id; // Añadir el ID del documento como un campo
 
-                // Crear un objeto ordenado alfabéticamente
-                const docDataOrdenado = {};
-                Object.keys(docData).sort().forEach(key => {
-                    docDataOrdenado[key] = docData[key];
+                    // Crear un objeto ordenado alfabéticamente
+                    const docDataOrdenado = {};
+                    Object.keys(docData).sort().forEach(key => {
+                        docDataOrdenado[key] = docData[key];
+                    });
+                    data.push(docDataOrdenado);
                 });
-                data.push(docDataOrdenado);
-            });
 
-            // Crear una hoja de trabajo a partir de los datos de la colección
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            XLSX.utils.book_append_sheet(workbook, worksheet, coleccion.nombre.charAt(0).toUpperCase() + coleccion.nombre.slice(1));
+                // Crear una hoja de trabajo a partir de los datos de la colección
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, worksheet, coleccion.nombre.charAt(0).toUpperCase() + coleccion.nombre.slice(1));
+            }
+
+            // Obtener la fecha y hora actual para el nombre del archivo
+            const now = new Date();
+            const fecha = now.toISOString().slice(0, 10);
+            const hora = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+            const nombreArchivo = `Backup_MultiplesColecciones_${fecha}_${hora}.xlsx`;
+
+            // Descargar el archivo Excel con todas las hojas
+            XLSX.writeFile(workbook, nombreArchivo);
+            alert("Copia de seguridad descargada correctamente con todas las colecciones.");
+
+        } catch (error) {
+            console.error("Error al descargar las colecciones:", error);
+            alert("Ocurrió un error al descargar la copia de seguridad.");
         }
-
-        // Obtener la fecha y hora actual para el nombre del archivo
-        const now = new Date();
-        const fecha = now.toISOString().slice(0, 10);
-        const hora = now.toTimeString().slice(0, 8).replace(/:/g, '-');
-        const nombreArchivo = `Backup_MultiplesColecciones_${fecha}_${hora}.xlsx`;
-
-        // Descargar el archivo Excel con todas las hojas
-        XLSX.writeFile(workbook, nombreArchivo);
-        alert("Copia de seguridad descargada correctamente con todas las colecciones.");
-
-    } catch (error) {
-        console.error("Error al descargar las colecciones:", error);
-        alert("Ocurrió un error al descargar la copia de seguridad.");
     }
-}
 
     // Función para capitalizar el área de trabajo
     function capitalize(str) {
